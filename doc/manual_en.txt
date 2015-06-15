@@ -148,7 +148,7 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
   Though, multithread analysis for branched code is still possible using
   threads and new disassembler object dedicated to the branch.
 
-4. Adding support for new architecture
+4 Adding support for new architecture
 
   To add support for a new architecture, you have to create a class
   which is final, it should be called "ssde_ARCHITECTURE", inherit from
@@ -173,7 +173,7 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
   If you plan to contribute, your code style shall be the same as style
   of project's code.
 
-5. Reporting an error
+5 Reporting an error
 
   If you find some error, before you write the report you are advised to
   make sure you're using the latest version of SSDE and that the error is
