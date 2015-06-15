@@ -1,0 +1,11 @@
+example/Debug/*
+example/Release/*
+example/.vs/*
+
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.out

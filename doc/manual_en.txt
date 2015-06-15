@@ -1,0 +1,183 @@
+               ::::::::   ::::::::  :::::::::  ::::::::::
+              :+:    :+: :+:    :+: :+:    :+: :+:
+              +:+        +:+        +:+    +:+ +:+
+              +#++:++#++ +#++:++#++ +#+    +:+ +#++:++#
+                     +#+        +#+ +#+    +#+ +#+
+              #+#    #+# #+#    #+# #+#    #+# #+#
+               ########   ########  #########  ##########
+
+                The Small Scalable Disassembler Engine
+Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
+                   http://github.com/notnanocat/ssde
+
+
+
+ 1 What is SSDE?
+ 2 "Why does SSDE exist, if disassembler engines such as HDE, diStorm,
+  BeaEngine etc already exist?" or "The advantages of SSDE"
+  2.1 Performance and benchmarks
+ 3 How to use SSDE?
+  3.1 Various architectures
+  3.2 Decoding errors
+  3.3 Multithreading
+ 4 Adding support for new architecture
+ 5 Reporting an error
+
+
+
+1 What is SSDE?
+
+  SSDE is a small, scalable disassembly engine, purposed to analyze machine
+  code and retrieving information on instructions (their length, opcode,
+  correctness, etc).
+
+  SSDE is quite functional, e.g.: you can build a complete disassembler
+  which would output assembly listing of the program, generated from machine
+  code using SSDE. Scalability of SSDE lets you perform analysis of several
+  branches at the same time using multithreading.
+
+2. "Why does SSDE exist, if disassembler engines such as HDE, diStorm,
+  BeaEngine etc already exist?" or "The advantages of SSDE"
+
+  Motivation for writing SSDE was that existing disassembler engines were
+  either large and/or were licensed under GNU GPL (such are: diStorm,
+  BeaEngine), or they were obsolete and wouldn't support new instructions
+  and nobody maintained those (HDE). SSDE can be called new & modern
+  equivalent of HDE. Other than that, it's planned to support different
+  architectures (these are most likely to be added shortly: x86 64, ARM32).
+  SSDE is licensed under MIT license, which lets you use it in your private
+  or commerical projects without any kinds of restrictions or liabilities.
+  SSDE modules are written with portability in mind: they should work on
+  any machines, regardless of architecture, endianness or OS etc. All SSDE
+  code is written in C++, compliant to C++11. All public API is well
+  documented (see "ssde.hpp") and the implementation is quite clean and
+  maintainable.
+
+  Main advantages of SSDE over other engines are:
+
+    - modularity (use only what is required)
+    - high performance when analyzing long sequences of machine code
+    - small size
+    - independent of processor architecture, byte order and OS
+    - free to use
+
+
+  Feature of ssde_x86 module:
+
+    - support for new and not really extensions
+        AES, SHA, VMX
+        MMX, 3DNow! (basic), SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2
+        other minor extensions (CPUID, ADX, RDSEED, RDRAND etc)
+
+2.1 Performance and benchmarks
+
+  There were no proper benchmarks performed yet, though I have done a
+  micro benchmark of ssde_x86 to compare performance against HDE and
+  figuring out cases which slow down instruction decoding.
+
+  cl 19.00.22816 (Visual C++ 2015) /O2
+  win8.1 x64
+  core i3 2350m @ 2.3 GHz
+
+  Analysis of sequence of 17 instructions, 1M iterations
+
+    SSDE : 4.942 s, 0.000029 s/instruction
+    HDE  : 5.542 s, 0.000032 s/instruction
+
+  There are 2 cases known where SSDE will lose to HDE in performance.
+
+    - frequent reinitialization of disassembler object
+    - analysis of instructions which require displacements, immediates,
+        relative addresses etc to be read.
+
+  Further benchmarks will be done on various architectures (other than x86,
+  ARM LE and MIPS BE will probably be used) under GNU/Linux.
+
+3 How to use SSDE?
+
+  SSDE was written in C++, compliant to C++11. To include SSDE into your
+  project you're required to have compiler that supports C++11.
+
+  Each module has at least two constructors. Primary constructor and copy
+  constructor. Primary constructor takes two arguments:
+
+    1: pointer to array of bytes (input). Constructor does not copy the
+        input, that requires you to keep the input during the analysis,
+        pointed by the pointer passed.
+
+    2: IP (instruction pointer, optional=0). Pointer to an instruction
+        decoding will be started with.
+
+  Copy constructor can be used to make analysis parallel, e.g.: branch
+  analysis. Copy constructor copies the DATA POINTER and the IP, but
+  does NOT copy instruction information.
+
+3.1 Various architectures
+
+  Modular structure gives you ability to include only modules you need in
+  your project. Key file is "ssde.hpp". "*.cpp" files are optional and can
+  be omitted. e.g.: if you wish you use SSDE only for X86, then the files
+  you will have to include are "ssde.hpp" and "ssde_x86.cpp".
+
+3.2 Decoding errors
+
+  When decoding instructions, errors can appear. They usually appear
+  because of malformed instructions in machine code. In many cases critical
+  errors do NOT happen and instruction decoding goes right. Though, there
+  are two exceptional errors, which deny any guarantees that instruction
+  will be decoded properly. Those are: error_opcode and error_length.
+  error_opcode appears when the decoder meets opcode it isn't aware of.
+  error_length appears when instruction is unnaturally too long. In case
+  of error_opcode field "length" will be =1.
+
+  During analysis, if any error appears, field "error" will be set to
+  "true", so will be the field indicating the kind of the error.
+
+
+  Fields that signal about errors are:
+
+    - error         : "true" if any error appears at all
+    - error_opcode  : "true" in case of an unknown opcode
+    - error_operand : "true" if one of instruction operands isn't valid
+    - error_length  : "true" if instruction is too long (15 max in X86)
+
+3.3 Multithreading
+
+  SSDE is not thread safe.
+
+  Though, multithread analysis for branched code is still possible using
+  threads and new disassembler object dedicated to the branch.
+
+4. Adding support for new architecture
+
+  To add support for a new architecture, you have to create a class
+  which is final, it should be called "ssde_ARCHITECTURE", inherit from
+  "ssde" and use ssde::ssde constructors. Prototypes of all classes must
+  be declared in ssde.hpp. e.g.:
+
+    /* ssde.hpp */
+      class ssde_arm final : public ssde
+      {
+      public:
+        using ssde::ssde;
+
+        void next() override final;
+
+      private:
+        void reset_fields();
+
+      public:
+        bool shift_error = false; // Bit shift used wrong.
+      }
+
+  If you plan to contribute, your code style shall be the same as style
+  of project's code.
+
+5. Reporting an error
+
+  If you find some error, before you write the report you are advised to
+  make sure you're using the latest version of SSDE and that the error is
+  in SSDE algorithm and not your code. You can send the report at http://github.com/notnanocat/ssde/issues
+  Other than the report, it's recommended that you supply code which will
+  reproduce the error in SSDE. The report should describe the conditions
+  the error happens in, name of module and the method it appears in.
