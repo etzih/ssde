@@ -40,18 +40,16 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
   BeaEngine etc already exist?" or "The advantages of SSDE"
 
   Motivation for writing SSDE was that existing disassembler engines were
-  either large and/or were licensed under GNU GPL (such are: diStorm,
-  BeaEngine), or they were obsolete and wouldn't support new instructions
-  and nobody maintained those (HDE). SSDE can be called new & modern
-  equivalent of HDE. Other than that, it's planned to support different
-  architectures (these are most likely to be added shortly: x86 64, ARM32).
-  SSDE is licensed under MIT license, which lets you use it in your private
-  or commerical projects without any kinds of restrictions or liabilities.
-  SSDE modules are written with portability in mind: they should work on
-  any machines, regardless of architecture, endianness or OS etc. All SSDE
-  code is written in C++, compliant to C++11. All public API is well
-  documented (see "ssde.hpp") and the implementation is quite clean and
-  maintainable.
+  either large and/or were non-free, or they were obsolete and wouldn't
+  support new instructions and nobody maintained those. Other than that,
+  it's planned to support different architectures (these are most likely
+  to be added shortly: x86 64, ARM32). SSDE is licensed under MIT license,
+  which lets you use it in your private or commerical projects without
+  any kinds of restrictions or liabilities. SSDE modules are written with
+  portability in mind: they should work on any machines, regardless of
+  architecture, endianness or OS etc. All SSDE code is written in C++,
+  compliant to C++11. All public API is well documented (see "ssde.hpp")
+  and the implementation is quite clean and maintainable.
 
   Main advantages of SSDE over other engines are:
 
@@ -62,11 +60,9 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
     - free to use
 
 
-  Feature of ssde_x86 module:
-
-    - support for new and not really extensions
+  ssde_x86 module provides support for new and not really extensions
         AES, SHA, VMX
-        MMX, 3DNow! (basic), SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2
+        MMX, SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2
         other minor extensions (CPUID, ADX, RDSEED, RDRAND etc)
 
 2.1 Performance and benchmarks
@@ -99,18 +95,12 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
   project you're required to have compiler that supports C++11.
 
   Each module has at least two constructors. Primary constructor and copy
-  constructor. Primary constructor takes two arguments:
+  constructor. Primary constructor takes
 
-    1: pointer to array of bytes (input). Constructor does not copy the
-        input, that requires you to keep the input during the analysis,
-        pointed by the pointer passed.
-
-    2: IP (instruction pointer, optional=0). Pointer to an instruction
-        decoding will be started with.
+    1: std::string container with binary data.
 
   Copy constructor can be used to make analysis parallel, e.g.: branch
-  analysis. Copy constructor copies the DATA POINTER and the IP, but
-  does NOT copy instruction information.
+  analysis.
 
 3.1 Various architectures
 
@@ -127,11 +117,11 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
   are two exceptional errors, which deny any guarantees that instruction
   will be decoded properly. Those are: error_opcode and error_length.
   error_opcode appears when the decoder meets opcode it isn't aware of.
-  error_length appears when instruction is unnaturally too long. In case
-  of error_opcode field "length" will be =1.
+  error_length appears when instruction is unnaturally too long.
 
-  During analysis, if any error appears, field "error" will be set to
-  "true", so will be the field indicating the kind of the error.
+  During analysis, if any error appears (except "error_overflow"), field
+  "error" will be set to "true", so will be the field indicating the kind
+  of the error.
 
 
   Fields that signal about errors are:
@@ -140,6 +130,14 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
     - error_opcode  : "true" in case of an unknown opcode
     - error_operand : "true" if one of instruction operands isn't valid
     - error_length  : "true" if instruction is too long (15 max in X86)
+
+  WARNING!
+
+    In case of IP overflow (IP goes out of buffer's bounds) field
+    "error_overflow" will be set to "true" even though "error" will still
+    be set to "false". While "error_overflow" == true, ::dec() won't do
+    anything. You have to manually reset the field before you do any
+    analysis.
 
 3.3 Multithreading
 
@@ -161,13 +159,13 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
       public:
         using ssde::ssde;
 
-        void next() override final;
+        void dec() override final; // Decode the instruction pointed by IP.
 
       private:
         void reset_fields();
 
       public:
-        bool shift_error = false; // Bit shift used wrong.
+        bool error_shift = false; // Bit shift used wrong.
       }
 
   If you plan to contribute, your code style shall be the same as style
