@@ -152,6 +152,7 @@ void ssde_x86::reset_fields()
 	has_imm2  = false;
 	has_disp  = false;
 	has_rel   = false;
+	has_vex   = false;
 
 	group1 = 0;
 	group2 = 0;
@@ -161,15 +162,33 @@ void ssde_x86::reset_fields()
 	opcode1 = 0;
 	opcode2 = 0;
 	opcode3 = 0;
+
+	has_vex = false;
+	vex_reg = 0;
+	vex_r   = false;
+	vex_x   = false;
+	vex_b   = false;
+	vex_w   = false;
+	vex_l   = false;
 }
 
-void ssde_x86::next()
+bool ssde_x86::dec()
 {
+	if (error_overflow)
+		return false;
+
+	if (ip >= buffer.length())
+	{
+		if (ip > buffer.length())
+			error_overflow = true;
+
+		return false;
+	}
+
+
 	reset_fields();
 
-	ip = next_ip;
-
-	for (unsigned int x = 0; x < 15; ++x, ++next_ip)
+	for (unsigned int x = 0; x < 15; ++x, ++length)
 		/*
 		* This is prefix analyzer. It behaves exactly the
 		* same way real CPUs analyze instructions for
@@ -182,7 +201,7 @@ void ssde_x86::next()
 		* if the word is longer than that, decoder will fail.
 		*/
 	{
-		uint8_t prefix = buffer[next_ip];
+		uint8_t prefix = buffer[ip + length];
 
 		/* 1st group */
 		if (prefix == p_lock  ||
@@ -224,59 +243,137 @@ void ssde_x86::next()
 		break;
 	}
 
+	
 	uint8_t flags = ::error;
 
-
-	opcode1 = buffer[next_ip++];
-
-	if (opcode1 == 0x0f)
-		/* 2 and 3 byte opcodes' 1st byte is 0F */
+	if ((static_cast<uint8_t>(buffer[ip + length]) == 0xc4 || static_cast<uint8_t>(buffer[ip + length]) == 0xc5) &&
+		buffer[ip + length+1] & 0x80)
+		/* looks like we've found a VEX prefix */
 	{
-		opcode2 = buffer[next_ip++];
+		if (group1 != 0 ||
+			group2 != 0 ||
+			group3 != 0 ||
+			group4 != 0)
+		{
+			error = true;
+			error_opcode = true;
+		}
 
-		if (opcode2 == 0x0f)
-			/*
-			* SSDE only provides basic support for 3DNow!
-			* due to it being very unpopular since 1998
-			* and even AMD decided to drop support for it
-			* in 2010.
-			*
-			* All 3DNow! 0F 0F xx instructions have exactly
-			* same length and none of them have any immediates.
-			* Instruction encoding here is very fucked here,
-			* regular instructions have opcode byte going
-			* first and Mod R/M byte going after. But in
-			* 3DNow! AMD decided that it would be a great
-			* idea to have Mod byte go first and the opcode
-			* after it. We solve this issue by treating
-			* third opcode like a 8 bit immediate and then
-			* moving it to opcode3 field.
-			*/
+		uint8_t prefix = buffer[ip + length++];
+
+		if (prefix == 0xc4)
+			/* this is a 3 byte VEX */
 		{
-			flags = ::rm | ::i8;
-		}
-		else if (opcode2 == 0x38)
-			/* a 3 byte opcode's 2nd byte is either 38 */
-		{
-			opcode3 = buffer[next_ip++];
-			flags   = op_table_38[opcode3];
-		}
-		else if (opcode2 == 0x3a)
-			/* or 3A */
-		{
-			opcode3 = buffer[next_ip++];
-			flags   = op_table_3a[opcode3];
+			vex_size = 3;
+
+			uint8_t vex_1 = buffer[ip + length++];
+
+			vex_r = vex_1 & 0x80 ? true : false;
+			vex_x = vex_1 & 0x40 ? true : false;
+			vex_b = vex_1 & 0x20 ? true : false;
+
+			switch (vex_1 & 0x1f)
+				/* decode first one or two opcode bytes */
+			{
+			case 0x01:
+				{
+					opcode1 = 0x0f;
+				}
+				break;
+
+			case 0x02:
+				{
+					opcode1 = 0x0f;
+					opcode2 = 0x38;
+				}
+				break;
+
+			case 0x03:
+				{
+					opcode1 = 0x0f;
+					opcode2 = 0x3a;
+				}
+				break;
+
+			default:
+				{
+					error = true;
+					error_opcode = true;
+				}
+				break;
+			}
 		}
 		else
 		{
-			flags = op_table_0f[opcode2];
+			vex_size = 2;
+		}
+
+
+		uint8_t vex_2 = buffer[ip + length++];
+
+		if (prefix == 0xc4)
+			vex_w = vex_2 & 0x80 ? true : false;
+		else
+		{
+			vex_r = vex_2 & 0x80 ? true : false;
+		}
+		
+		vex_reg = ~vex_2 & 0x78 >> 3;
+		vex_l   = vex_2 & 0x04 ? true : false;
+
+		switch (vex_2 & 0x02)
+			/* decode prefix */
+		{
+		case 0x01:
+			{
+				group3 = p_66;
+			}
+			break;
+
+		case 0x02:
+			{
+				group1 = p_repz;
+			}
+			break;
+
+		case 0x03:
+			{
+				group1 = p_repnz;
+			}
+			break;
+
+		default:
+			break;
+		}
+
+		if (opcode1 == 0x0f)
+		{
+			if (opcode2 == 0x38 ||
+				opcode2 == 0x3a)
+			{
+				opcode3 = buffer[ip + length++];
+			}
+			else
+			{
+				opcode2 = buffer[ip + length++];
+			}
 		}
 	}
 	else
+		/* instruction operands are written normal way */
 	{
-		flags = op_table[opcode1];
+		opcode1 = buffer[ip + length++];
 
-		if (opcode1 == 0xf6 || opcode1 == 0xf7)
+		if (opcode1 == 0x0f)
+		{
+			opcode2 = buffer[ip + length++];
+
+			if (opcode2 == 0x38 || opcode2 == 0x3a)
+			{
+				opcode3 = buffer[ip + length++];
+			}
+		}
+		else if (opcode1 == 0xf6 || opcode1 == 0xf7)
 			/*
 			* These are two exceptional opcodes that extend
 			* using 3 bits of Mod R/M byte and they lack
@@ -286,10 +383,10 @@ void ssde_x86::next()
 			* to these two exceptional opcodes.
 			*/
 		{
-			switch (buffer[ip] >> 3 & 0b111)
+			switch (buffer[ip + length] >> 3 & 0x07)
 			{
-			case 0b000:
-			case 0b001:
+			case 0x00:
+			case 0x10:
 				{
 					if (opcode1 == 0xf6)
 						flags = rm | i8;
@@ -299,20 +396,41 @@ void ssde_x86::next()
 				}
 				break;
 
-			case 0b010:
-			case 0b011:
-			case 0b100:
-			case 0b101:
-			case 0b110:
-			case 0b111:
+			default:
 				{
 					flags = rm;
 				}
 				break;
-
-			default:
-				break;
 			}
+		}
+		else
+			/* this is a regular single opcode instruction */
+		{
+			flags = op_table[opcode1];
+		}
+	}
+
+	if (opcode1 == 0x0f)
+	{
+		switch (opcode2)
+		{
+		case 0x38:
+			{
+				flags = op_table_38[opcode3];
+			}
+			break;
+
+		case 0x3a:
+			{
+				flags = op_table_3a[opcode3];
+			}
+			break;
+
+		default:
+			{
+				flags = op_table_0f[opcode2];
+			}
+			break;
 		}
 	}
 
@@ -322,19 +440,19 @@ void ssde_x86::next()
 		if (flags & ::rm)
 			/* this instruction has a Mod R/M byte, decode it */
 		{
-			uint8_t modrm_byte = buffer[next_ip++];
+			uint8_t modrm_byte = buffer[ip + length++];
 
 			has_modrm = true;
-			modrm_mod = modrm_byte >> 6 & 0b11;
-			modrm_reg = modrm_byte >> 3 & 0b111;
-			modrm_rm  = modrm_byte      & 0b111;
+			modrm_mod = modrm_byte >> 6 & 0x03;
+			modrm_reg = modrm_byte >> 3 & 0x07;
+			modrm_rm  = modrm_byte      & 0x07;
 
 			switch (modrm_mod)
 			{
-			case 0b00:
+			case 0x00:
 				if (group4 == p_67)
 				{
-					if (modrm_rm == 0b110)
+					if (modrm_rm == 0x06)
 					{
 						has_disp  = true;
 						disp_size = 2;
@@ -342,10 +460,10 @@ void ssde_x86::next()
 				}
 				else
 				{
-					if (modrm_rm == 0b100)
+					if (modrm_rm == 0x04)
 						has_sib = true;
 
-					if (modrm_rm == 0b101)
+					if (modrm_rm == 0x05)
 					{
 						has_disp  = true;
 						disp_size = 4;
@@ -353,9 +471,9 @@ void ssde_x86::next()
 				}
 				break;
 
-			case 0b01:
+			case 0x01:
 				{
-					if (group4 != p_67 && modrm_rm == 0b100)
+					if (group4 != p_67 && modrm_rm == 0x04)
 						has_sib = true;
 
 					has_disp  = true;
@@ -363,9 +481,9 @@ void ssde_x86::next()
 				}
 				break;
 
-			case 0b10:
+			case 0x02:
 				{
-					if (group4 != p_67 && modrm_rm == 0b100)
+					if (group4 != p_67 && modrm_rm == 0x04)
 						has_sib = true;
 
 					has_disp  = true;
@@ -373,7 +491,7 @@ void ssde_x86::next()
 				}
 				break;
 
-			case 0b11:
+			case 0x03:
 				if (group1 == p_lock)
 					/* LOCK prefix is not allowed to be used with Mod R */
 				{
@@ -389,13 +507,13 @@ void ssde_x86::next()
 			if (has_sib)
 				/* if instruction has a SIB byte, decode it, too */
 			{
-				uint8_t sib_byte = buffer[next_ip++];
+				uint8_t sib_byte = buffer[ip + length++];
 
-				sib_scale = 1 << (sib_byte >> 6 & 0b11);
-				sib_index = sib_byte >> 3 & 0b111;
-				sib_base  = sib_byte      & 0b111;
+				sib_scale = 1 << (sib_byte >> 6 & 0x03);
+				sib_index = sib_byte >> 3 & 0x07;
+				sib_base  = sib_byte      & 0x07;
 
-				if (sib_index == 0b100)
+				if (sib_index == 0x04)
 					/* index register can't be (E/R)SP */
 				{
 					error = true;
@@ -408,7 +526,7 @@ void ssde_x86::next()
 				disp = 0;
 
 				for (unsigned int i = 0; i < disp_size; i++)
-					disp |= buffer[next_ip++] << i*8;
+					disp |= buffer[ip + length++] << i*8;
 			}
 		}
 		else if (group1 == p_lock)
@@ -466,7 +584,7 @@ void ssde_x86::next()
 			imm = 0;
 
 			for (unsigned int i = 0; i < imm_size; ++i)
-				imm |= buffer[next_ip++] << i*8;
+				imm |= buffer[ip + length++] << i*8;
 
 
 			if (has_imm2)
@@ -474,15 +592,8 @@ void ssde_x86::next()
 				imm2 = 0;
 
 				for (unsigned int i = 0; i < imm2_size; ++i)
-					imm2 |= buffer[next_ip++] << i*8;
+					imm2 |= buffer[ip + length++] << i*8;
 			}
-		}
-
-		if (opcode2 == 0x0f)
-			/* this is 3DNow! opcode, move imm to opcode3 */
-		{
-			has_imm = false;
-			opcode3 = imm;
 		}
 
 		if (flags & ::rel)
@@ -515,14 +626,10 @@ void ssde_x86::next()
 				}
 			}
 
-
-			abs = next_ip + rel;
+			abs = ip + length + rel;
 
 			has_rel = true;
 		}
-
-
-		length = next_ip - ip;
 
 		if (length > 15)
 			/* CPU can't handle instructions longer than 15 bytes */
@@ -540,4 +647,6 @@ void ssde_x86::next()
 
 		length = 1;
 	}
+
+	return true;
 }

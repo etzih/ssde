@@ -4,8 +4,11 @@
 */
 #pragma once
 
+#include <string>
+
 #include <stdint.h>
 #include <stddef.h>
+
 
 /*
 * The SSDE base class. This class is used to build disassembler
@@ -14,44 +17,32 @@
 * SSDE derivation, specific to the architecture you need.
 *
 * Sample usage:
-*   ssde_x86 dis(buffer, 0);
-*   do {
-*     dis.next();
-*   } while (dis.ip < length_of_buffer);
-*
-* SSDE uses WEAK memory aliasing, so make sure data you pass
-* it exists in the memory during the next() call. Make sure
-* that SSDE won't overrun the buffer by checking that IP is
-* < than instruction_buffer_length. Do it before each iteration.
-*
-* WEAK memory aliasing lets SSDE to be used to analyze large
-* amounts of machine code while keeping great performance. 
-* Heavily branched code can be easily analyzed due to cheap
-* copy constructor.
+*   for (ssde_x86 dis(buffer); dis.dec(); dis.next())
+*   {
+*     ...
+*   }
 */
 class ssde
 {
 public:
-	ssde(const uint8_t *data, size_t pos = 0) :
+	ssde(const std::string &data, size_t pos = 0) :
 		ip(pos),
-		next_ip(pos),
 		buffer(data)
 	{
 	}
 
 	ssde(const ssde &from) :
 		ip(from.ip),
-		next_ip(from.next_ip),
 		buffer(from.buffer)
 	{
 	}
 
-	virtual void next() = 0;                // Advance to the next instruction.
 
-	void inline set_ip(size_t pos = 0)      // Change IP.
+	virtual bool dec() = 0;                 // Decode instruction pointed by IP.
+
+	void next()                             // Advance to the next instruction.
 	{
-		ip      = pos;
-		next_ip = pos;
+		ip += length;
 	}
 
 public:
@@ -60,13 +51,13 @@ public:
 	bool error_operand = false;             // Bad operand(s).
 	bool error_length  = false;             // Instruction is too long.
 
-	size_t       ip;                        // Instruction pointer.
-	unsigned int length  = 0;               // Instruction length, in bytes.
+	bool error_overflow = false;            // IP is out of buffer's bounds. This field must be manually reset, otherwise ::next() won't do anything.
+
+	size_t       ip;                        // Instruction pointer. Can be manually overriden.
+	unsigned int length  = 0;               // Instruction length, in bytes. Can be manually overriden.
 
 protected:
-	size_t next_ip;
-
-	const uint8_t *buffer;
+	const std::string &buffer;
 };
 
 /*
@@ -100,7 +91,7 @@ public:
 
 	using ssde::ssde;
 
-	void next() override final;
+	bool dec() override final;
 
 private:
 	void reset_fields();
@@ -112,6 +103,15 @@ public:
 	uint8_t group2 = 0;                     // Opcode prefix in 2nd group, 0 if none. 2nd group includes segment prefixes and/or branch hints.
 	uint8_t group3 = 0;                     // Opcode prefix in 3rd group, 0 if none. 3rd group includes operand-size override prefix (p_66)
 	uint8_t group4 = 0;                     // Opcode prefix in 4th group, 0 if none. 4th group includes address-size override prefix (p_67)
+
+	bool    has_vex    = false;             // Has VEX prefix.
+	uint8_t vex_size   = 0;                 // Size of VEX prefix (usually 2 or 3 bytes).
+	uint8_t vex_reg    = 0;                 // VEX register specifier.
+	bool    vex_r      = false;             // R field.
+	bool    vex_x      = false;             // X field.
+	bool    vex_b      = false;             // B field.
+	bool    vex_w      = false;             // W field.
+	bool    vex_l      = false;             // L field.
 
 	uint8_t opcode1 = 0;                    // 1st opcode byte.
 	uint8_t opcode2 = 0;                    // 2nd opcode byte.
