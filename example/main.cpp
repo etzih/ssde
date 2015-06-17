@@ -18,7 +18,7 @@ int main(int argc, const char *argv[])
 	ios_base::sync_with_stdio(false);
 
 
-	const string demo = /* bc to disassemble */
+	const string bc =
 		"\x55"
 		"\x31\xd2"
 		"\x89\xe5"
@@ -37,12 +37,12 @@ int main(int argc, const char *argv[])
 		"\x5d"
 		"\xc3";
 
-
-	/* ssde::ssde requires a (const) pointer to array of bytes (uint8_t) to be passed. */
-	ssde_x86 dis(reinterpret_cast<const uint8_t *>(demo.c_str()));
-	
-	while (dis.next(), dis.ip < demo.length())
-		/* call next() to iterate and make sure that IP doesn't overflow */
+	for (ssde_x86 dis(bc); dis.dec(); dis.next())
+		/*
+		* call ::next() to iterate and ::dec() to
+		* decode and decide whether we have reached
+		* the end of the buffer or not
+		*/
 	{
 		/* output address of the instruction */
 		cout << setfill('0') << setw(8) << hex << dis.ip << ": ";
@@ -50,7 +50,7 @@ int main(int argc, const char *argv[])
 		for (unsigned int i = 0; i < dis.length; ++i)
 			/* output instruction's bytes */
 		{
-			cout << setfill('0') << setw(2) << hex << (static_cast<unsigned int>(demo[dis.ip+i]) & 0xff);
+			cout << setfill('0') << setw(2) << hex << (static_cast<unsigned int>(bc[dis.ip + i]) & 0xff);
 		}
 
 		if (dis.has_rel)
