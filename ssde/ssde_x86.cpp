@@ -21,26 +21,28 @@
 *   http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-instruction-set-reference-manual-325383.pdf
 */
 
-enum : uint8_t
+enum : uint16_t
 {
 	none = 0,
 
-	rm  = 1 << 0,
-	ex  = 1 << 1,
-	rel = 1 << 2,
-	i8  = 1 << 3,
-	i16 = 1 << 4,
-	i32 = 1 << 5,
-	am  = 1 << 6,
+	rm  = 1 << 0, /* expect Mod byte */
+	ex  = 1 << 1, /* expect Mod opcode extension */
+	rel = 1 << 2, /* instruction's imm is a relative address */
+	i8  = 1 << 3, /* has 8 bit imm */
+	i16 = 1 << 4, /* has 16 bit imm */
+	i32 = 1 << 5, /* has 32 bit imm, which can be turned to 16 with 66 prefix */
+	am  = 1 << 6, /* instruction uses address mode, imm is a memory address */
+	vx  = 1 << 7, /* instruction requires VEX prefix */
+	mp  = 1 << 8, /* instruction has mandatory 66 prefix */
 
 	r8  = i8  | rel,
 	r32 = i32 | rel,
 
-	error = (uint8_t)-1
+	error = (uint16_t)-1
 };
 
 /* 1st opcode flag table */
-static const uint8_t op_table[256] =
+static const uint16_t op_table[256] =
 {
 	/*x0  |  x1  |  x2  |  x3  |  x4  |  x5  |  x6  |  x7  |  x8  |  x9  |  xA  |  xB  |  xC  |  xD  |  xE  |  xF */
 	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , none , none ,  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , none , error, /* 0x */
@@ -65,7 +67,7 @@ static const uint8_t op_table[256] =
 * 2nd opcode flag table
 * 0F xx
 */
-static const uint8_t op_table_0f[256] =
+static const uint16_t op_table_0f[256] =
 {
 	/*x0  |  x1  |  x2  |  x3  |  x4  |  x5  |  x6  |  x7  |  x8  |  x9  |  xA  |  xB  |  xC  |  xD  |  xE  |  xF */
 	  rm  ,  rm  ,  rm  ,  rm  , error, error, none , error, none , none , error, none , error,  rm  , none , error, /* 0x */
@@ -90,21 +92,21 @@ static const uint8_t op_table_0f[256] =
 * 3rd opcode flag table
 * 0F 38 xx
 */
-static const uint8_t op_table_38[256] =
+static const uint16_t op_table_38[256] =
 {
 	/*x0  |  x1  |  x2  |  x3  |  x4  |  x5  |  x6  |  x7  |  x8  |  x9  |  xA  |  xB  |  xC  |  xD  |  xE  |  xF */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , error, error, error, error, /* 0x */
-	  rm  , error, error, error,  rm  ,  rm  , error,  rm  , error, error, error, error,  rm  ,  rm  ,  rm  , error, /* 1x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , error, error,  rm  ,  rm  ,  rm  ,  rm  , error, error, error, error, /* 2x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , error,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 3x */
-	  rm  ,  rm  , error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 4x */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 5x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , vx|rm, vx|rm, error, error, /* 0x */
+	 mp|rm, error, error, error, mp|rm, mp|rm, error, mp|rm, vx|rm, error, vx|rm, error,  rm  ,  rm  ,  rm  , error, /* 1x */
+	 mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, error, error, mp|rm, mp|rm, mp|rm, mp|rm, vx|rm, vx|rm, error, error, /* 2x */
+	 mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, error, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, /* 3x */
+	 mp|rm, mp|rm, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 4x */
+	 error, error, error, error, error, error, error, error, vx|rm, vx|rm, error, error, error, error, error, error, /* 5x */
 	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 6x */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 7x */
-	  rm  ,  rm  , error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 8x */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 9x */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* Ax */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* Bx */
+	 error, error, error, error, error, error, error, error, vx|rm, vx|rm, error, error, error, error, error, error, /* 7x */
+	 mp|rm, mp|rm, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 8x */
+	 error, error, error, error, error, error, vx|rm, vx|rm, vx|rm, error, vx|rm, error, vx|rm, error, vx|rm, error, /* 9x */
+	 error, error, error, error, error, error, vx|rm, vx|rm, vx|rm, error, vx|rm, error, vx|rm, error, vx|rm, error, /* Ax */
+	 error, error, error, error, error, error, vx|rm, vx|rm, vx|rm, error, vx|rm, error, vx|rm, error, vx|rm, error, /* Bx */
 	 error, error, error, error, error, error, error, error,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , error, error, /* Cx */
 	 error, error, error, error, error, error, error, error, error, error, error,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Dx */
 	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* Ex */
@@ -115,25 +117,25 @@ static const uint8_t op_table_38[256] =
 * 3rd opcode flag table
 * 0F 3A xx
 */
-static const uint8_t op_table_3a[256] =
+static const uint16_t op_table_3a[256] =
 {
-	/*x0  |  x1  |  x2  |  x3  |  x4  |  x5  |  x6  |  x7  |  x8  |  x9  |  xA  |  xB  |  xC  |  xD  |  xE  |  xF */
-	 error, error, error, error, error, error, error, error, rm|i8, rm|i8, rm|i8, rm|i8, rm|i8, rm|i8, rm|i8,  rm  , /* 0x */
-	 error, error, error, error, rm|i8, rm|i8, rm|i8, rm|i8, error, error, error, error, error, error, error, error, /* 1x */
-	 rm|i8, rm|i8, rm|i8, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 2x */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 3x */
-	  rm  ,  rm  , rm|i8, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 4x */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 5x */
-	 rm|i8, rm|i8, rm|i8, rm|i8, error, error, error, error, error, error, error, error, error, error, error, error, /* 6x */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 7x */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 8x */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 9x */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* Ax */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* Bx */
-	 error, error, error, error, error, error, error, error, error, error, error, error, rm|i8, error, error, error, /* Cx */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* Dx */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* Ex */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* Fx */
+	/* x0   |   x1   |   x2   |   x3   |   x4   |   x5   |   x6   |   x7   |   x8   |   x9   |   xA   |   xB   |   xC   |   xD   |   xE   |   xF  */
+	  error ,  error ,  error ,  error ,  error ,  error ,vx|rm|i8,  error ,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,   rm   , /* 0x */
+	  error ,  error ,  error ,  error ,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,vx|rm|i8,vx|rm|i8,  error ,  error ,  error ,  error ,  error ,  error , /* 1x */
+	mp|rm|i8,mp|rm|i8,mp|rm|i8,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 2x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 3x */
+	  mp|rm ,  mp|rm ,mp|rm|i8,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 4x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 5x */
+	mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,  error ,  error ,  error ,  error ,vx|rm|i8,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 6x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 7x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 8x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 9x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* Ax */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* Bx */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,mp|rm|i8,  error ,  error ,  error , /* Cx */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* Dx */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* Ex */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* Fx */
 };
 
 void ssde_x86::reset_fields()
@@ -145,6 +147,7 @@ void ssde_x86::reset_fields()
 	error_operand = false;
 	error_length  = false;
 	error_lock    = false;
+	error_vex     = false;
 
 	has_modrm = false;
 	has_sib   = false;
@@ -210,6 +213,7 @@ bool ssde_x86::dec()
 		{
 			if (group1 == p_none)
 				group1 = prefix;
+
 			continue;
 		}
 
@@ -221,6 +225,7 @@ bool ssde_x86::dec()
 		{
 			if (group2 == p_none)
 				group2 = prefix;
+
 			continue;
 		}
 
@@ -229,6 +234,7 @@ bool ssde_x86::dec()
 		{
 			if (group3 == p_none)
 				group3 = prefix;
+
 			continue;
 		}
 
@@ -237,6 +243,7 @@ bool ssde_x86::dec()
 		{
 			if (group4 == p_none)
 				group4 = prefix;
+
 			continue;
 		}
 
@@ -244,7 +251,7 @@ bool ssde_x86::dec()
 	}
 
 	
-	uint8_t flags = ::error;
+	uint16_t flags = ::error;
 
 	if ((static_cast<uint8_t>(buffer[ip + length]) == 0xc4 || static_cast<uint8_t>(buffer[ip + length]) == 0xc5) &&
 		buffer[ip + length+1] & 0x80)
@@ -259,12 +266,14 @@ bool ssde_x86::dec()
 			error_opcode = true;
 		}
 
+
 		uint8_t prefix = buffer[ip + length++];
 
 		if (prefix == 0xc4)
 			/* this is a 3 byte VEX */
 		{
 			vex_size = 3;
+
 
 			uint8_t vex_1 = buffer[ip + length++];
 
@@ -299,6 +308,7 @@ bool ssde_x86::dec()
 				{
 					error = true;
 					error_opcode = true;
+					error_vex = true;
 				}
 				break;
 			}
@@ -306,6 +316,8 @@ bool ssde_x86::dec()
 		else
 		{
 			vex_size = 2;
+
+			opcode1 = 0x0f;
 		}
 
 
@@ -348,14 +360,20 @@ bool ssde_x86::dec()
 
 		if (opcode1 == 0x0f)
 		{
-			if (opcode2 == 0x38 ||
-				opcode2 == 0x3a)
+			if (opcode2 == 0x38)
 			{
 				opcode3 = buffer[ip + length++];
+				flags   = op_table_38[opcode3];
+			}
+			else if (opcode2 == 0x3a)
+			{
+				opcode3 = buffer[ip + length++];
+				flags   = op_table_3a[opcode3];
 			}
 			else
 			{
 				opcode2 = buffer[ip + length++];
+				flags   = op_table_0f[opcode2];
 			}
 		}
 	}
@@ -368,9 +386,19 @@ bool ssde_x86::dec()
 		{
 			opcode2 = buffer[ip + length++];
 
-			if (opcode2 == 0x38 || opcode2 == 0x3a)
+			if (opcode2 == 0x38)
 			{
 				opcode3 = buffer[ip + length++];
+				flags   = op_table_38[opcode3];
+			}
+			else if (opcode2 == 0x3a)
+			{
+				opcode3 = buffer[ip + length++];
+				flags   = op_table_3a[opcode3];
+			}
+			else
+			{
+				flags = op_table_0f[opcode2];
 			}
 		}
 		else if (opcode1 == 0xf6 || opcode1 == 0xf7)
@@ -408,37 +436,27 @@ bool ssde_x86::dec()
 		{
 			flags = op_table[opcode1];
 		}
-	}
 
-	if (opcode1 == 0x0f)
-	{
-		switch (opcode2)
+		if (flags & ::vx)
+			/* this instruction can only be VEX-encoded */
 		{
-		case 0x38:
-			{
-				flags = op_table_38[opcode3];
-			}
-			break;
-
-		case 0x3a:
-			{
-				flags = op_table_3a[opcode3];
-			}
-			break;
-
-		default:
-			{
-				flags = op_table_0f[opcode2];
-			}
-			break;
+			error = true;
+			error_vex = true;
 		}
 	}
 
 	if (flags != ::error)
 		/* it's not a bullshit instruction */
 	{
+		if (flags & ::mp && group3 != p_66)
+			/* this instruction lacks mandatory 66 prefix */
+		{
+			error = true;
+			error_opcode = true;
+		}
+
 		if (flags & ::rm)
-			/* this instruction has a Mod R/M byte, decode it */
+			/* this instruction has a Mod byte, decode it */
 		{
 			uint8_t modrm_byte = buffer[ip + length++];
 
@@ -514,7 +532,7 @@ bool ssde_x86::dec()
 				sib_base  = sib_byte      & 0x07;
 
 				if (sib_index == 0x04)
-					/* index register can't be (E/R)SP */
+					/* index register can't be ESP */
 				{
 					error = true;
 					error_opcode = true;
@@ -535,6 +553,7 @@ bool ssde_x86::dec()
 			error = true;
 			error_lock = true;
 		}
+
 
 		if (flags & ::am)
 			/* address mode instructions behave a little differently */
@@ -630,6 +649,7 @@ bool ssde_x86::dec()
 
 			has_rel = true;
 		}
+
 
 		if (length > 15)
 			/* CPU can't handle instructions longer than 15 bytes */
