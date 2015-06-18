@@ -64,7 +64,7 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
 
   ssde_x86 поддерживает новые и не очень расширения
         AES, SHA, VMX
-        MMX, SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2
+        MMX, SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2, AVX, AVX2, FMA3
         прочие мелкие расширения (CPUID, ADX, RDSEED, RDRAND и т.д.)
 
 2.1 Бенчмарки

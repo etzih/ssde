@@ -62,7 +62,7 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
 
   ssde_x86 module provides support for new and not really extensions
         AES, SHA, VMX
-        MMX, SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2
+        MMX, SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2, AVX, AVX2, FMA3
         other minor extensions (CPUID, ADX, RDSEED, RDRAND etc)
 
 2.1 Performance and benchmarks
