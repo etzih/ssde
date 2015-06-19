@@ -119,9 +119,8 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
   error_opcode appears when the decoder meets opcode it isn't aware of.
   error_length appears when instruction is unnaturally too long.
 
-  During analysis, if any error appears (except "error_overflow"), field
-  "error" will be set to "true", so will be the field indicating the kind
-  of the error.
+  During analysis, if any error appears, field  "error" will be set to
+  "true", so will be the field indicating the kind of the error.
 
 
   Fields that signal about errors are:
@@ -134,10 +133,9 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
   WARNING!
 
     In case of IP overflow (IP goes out of buffer's bounds) field
-    "error_overflow" will be set to "true" even though "error" will still
-    be set to "false". While "error_overflow" == true, ::dec() won't do
-    anything. You have to manually reset the field before you do any
-    analysis.
+    "ip_overflow" will be set to "true". While "ip_overflow" == true,
+    ::dec() won't do anything. You have to manually reset the field
+    before you do any analysis.
 
 3.3 Multithreading
 
