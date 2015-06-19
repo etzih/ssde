@@ -1,6 +1,6 @@
 /*
 * The SSDE implementation for X86 instruction set.
-* Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
+* Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.md
 */
 #include "ssde.hpp"
 
@@ -51,7 +51,7 @@ static const uint16_t op_table[256] =
 	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, none ,  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, none , /* 3x */
 	 none , none , none , none , none , none , none , none , none , none , none , none , none , none , none , none , /* 4x */
 	 none , none , none , none , none , none , none , none , none , none , none , none , none , none , none , none , /* 5x */
-	 none , none ,  i8  ,  i8  , error, error, error, error,  i32 ,rm|i32,  i8  , rm|i8, none , none , none , none , /* 6x */
+	 none , none ,  rm  ,  rm  , error, error, error, error,  i32 ,rm|i32,  i8  , rm|i8, none , none , none , none , /* 6x */
 	  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  , /* 7x */
 	 rm|i8,rm|i32, rm|i8, rm|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 8x */
 	 none , none , none , none , none , none , none , none , none , none,i32|i16, none , none , none , none , none , /* 9x */
@@ -253,7 +253,9 @@ bool ssde_x86::dec()
 	
 	uint16_t flags = ::error;
 
-	if ((static_cast<uint8_t>(buffer[ip + length]) == 0xc4 || static_cast<uint8_t>(buffer[ip + length]) == 0xc5) &&
+	if ((static_cast<uint8_t>(buffer[ip + length]) == 0xc4 ||
+		 static_cast<uint8_t>(buffer[ip + length]) == 0xc5 ||
+		 static_cast<uint8_t>(buffer[ip + length]) == 0x62) &&
 		buffer[ip + length+1] & 0x80)
 		/* looks like we've found a VEX prefix */
 	{
@@ -269,7 +271,14 @@ bool ssde_x86::dec()
 
 		uint8_t prefix = buffer[ip + length++];
 
-		if (prefix == 0xc4)
+		if (prefix == 0x62)
+			/* this is a 4 byte VEX */
+		{
+			vex_size = 4;
+
+			//TODO(nanocat)
+		}
+		else if (prefix == 0xc4)
 			/* this is a 3 byte VEX */
 		{
 			vex_size = 3;
@@ -321,19 +330,19 @@ bool ssde_x86::dec()
 		}
 
 
-		uint8_t vex_2 = buffer[ip + length++];
+		uint8_t vex_lb = buffer[ip + length++];
 
 		if (prefix == 0xc4)
-			vex_w = vex_2 & 0x80 ? true : false;
+			vex_w = vex_lb & 0x80 ? true : false;
 		else
 		{
-			vex_r = vex_2 & 0x80 ? true : false;
+			vex_r = vex_lb & 0x80 ? true : false;
 		}
 		
-		vex_reg = ~vex_2 & 0x78 >> 3;
-		vex_l   = vex_2 & 0x04 ? true : false;
+		vex_reg = ~vex_lb & 0x78 >> 3;
+		vex_l   = vex_lb & 0x04 ? true : false;
 
-		switch (vex_2 & 0x02)
+		switch (vex_lb & 0x02)
 			/* decode prefix */
 		{
 		case 0x01:

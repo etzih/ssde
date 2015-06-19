@@ -1,6 +1,6 @@
 /*
 * The SSDE header file.
-* Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
+* Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.md
 */
 #pragma once
 
