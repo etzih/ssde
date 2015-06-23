@@ -2,7 +2,7 @@
 * The SSDE implementation for X86 instruction set.
 * Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.md
 */
-#include "ssde.hpp"
+#include "ssde_x86.hpp"
 
 #include <string>
 
@@ -124,7 +124,7 @@ static const uint16_t op_table_3a[256] =
 	  error ,  error ,  error ,  error ,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,vx|rm|i8,vx|rm|i8,  error ,  error ,  error ,  error ,  error ,  error , /* 1x */
 	mp|rm|i8,mp|rm|i8,mp|rm|i8,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 2x */
 	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 3x */
-	  mp|rm ,  mp|rm ,mp|rm|i8,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 4x */
+	  mp|rm ,  mp|rm ,mp|rm|i8,  error ,  error ,  error ,  error ,  error ,  error ,  error ,vx|rm|i8,vx|rm|i8,vx|rm|i8,  error ,  error ,  error , /* 4x */
 	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 5x */
 	mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,  error ,  error ,  error ,  error ,vx|rm|i8,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 6x */
 	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 7x */
@@ -168,22 +168,22 @@ void ssde_x86::reset_fields()
 
 	has_vex = false;
 	vex_reg = 0;
-	vex_r   = false;
-	vex_x   = false;
-	vex_b   = false;
-	vex_w   = false;
-	vex_l   = false;
+	vex_r   = 0;
+	vex_x   = 0;
+	vex_b   = 0;
+	vex_w   = 0;
+	vex_l   = 0;
 }
 
 bool ssde_x86::dec()
 {
-	if (error_overflow)
+	if (ip_overflow)
 		return false;
 
 	if (ip >= buffer.length())
 	{
 		if (ip > buffer.length())
-			error_overflow = true;
+			ip_overflow = true;
 
 		return false;
 	}
@@ -259,6 +259,8 @@ bool ssde_x86::dec()
 		buffer[ip + length+1] & 0x80)
 		/* looks like we've found a VEX prefix */
 	{
+		has_vex = true;
+
 		if (group1 != 0 ||
 			group2 != 0 ||
 			group3 != 0 ||
@@ -276,95 +278,100 @@ bool ssde_x86::dec()
 		{
 			vex_size = 4;
 
-			//TODO(nanocat)
+			//TODO
 		}
-		else if (prefix == 0xc4)
-			/* this is a 3 byte VEX */
+		else
 		{
-			vex_size = 3;
+			if (prefix == 0xc4)
+				/* this is a 3 byte VEX */
+			{
+				vex_size = 3;
 
 
-			uint8_t vex_1 = buffer[ip + length++];
+				uint8_t vex_1 = buffer[ip + length++];
 
-			vex_r = vex_1 & 0x80 ? true : false;
-			vex_x = vex_1 & 0x40 ? true : false;
-			vex_b = vex_1 & 0x20 ? true : false;
+				vex_r = vex_1 & 0x80 ? 1 : 0;
+				vex_x = vex_1 & 0x40 ? 1 : 0;
+				vex_b = vex_1 & 0x20 ? 1 : 0;
 
-			switch (vex_1 & 0x1f)
-				/* decode first one or two opcode bytes */
+				switch (vex_1 & 0x1f)
+					/* decode first one or two opcode bytes */
+				{
+				case 0x01:
+					{
+						opcode1 = 0x0f;
+					}
+					break;
+
+				case 0x02:
+					{
+						opcode1 = 0x0f;
+						opcode2 = 0x38;
+					}
+					break;
+
+				case 0x03:
+					{
+						opcode1 = 0x0f;
+						opcode2 = 0x3a;
+					}
+					break;
+
+				default:
+					{
+						error = true;
+						error_opcode = true;
+						error_vex = true;
+					}
+					break;
+				}
+			}
+			else
+			{
+				vex_size = 2;
+
+				opcode1 = 0x0f;
+			}
+
+
+			uint8_t vex_b = buffer[ip + length++];
+
+			if (prefix == 0xc4)
+				vex_w = vex_b & 0x80 ? true : false;
+			else
+			{
+				vex_r = vex_b & 0x80 ? true : false;
+			}
+
+			vex_l = vex_b & 0x04 ? 1 : 0;
+		
+
+			vex_reg = ~vex_b & 0x78 >> 3;
+
+			switch (vex_b & 0x02)
+				/* decode prefix */
 			{
 			case 0x01:
 				{
-					opcode1 = 0x0f;
+					group3 = p_66;
 				}
 				break;
 
 			case 0x02:
 				{
-					opcode1 = 0x0f;
-					opcode2 = 0x38;
+					group1 = p_repz;
 				}
 				break;
 
 			case 0x03:
 				{
-					opcode1 = 0x0f;
-					opcode2 = 0x3a;
+					group1 = p_repnz;
 				}
 				break;
 
 			default:
-				{
-					error = true;
-					error_opcode = true;
-					error_vex = true;
-				}
 				break;
 			}
-		}
-		else
-		{
-			vex_size = 2;
-
-			opcode1 = 0x0f;
-		}
-
-
-		uint8_t vex_lb = buffer[ip + length++];
-
-		if (prefix == 0xc4)
-			vex_w = vex_lb & 0x80 ? true : false;
-		else
-		{
-			vex_r = vex_lb & 0x80 ? true : false;
-		}
-		
-		vex_reg = ~vex_lb & 0x78 >> 3;
-		vex_l   = vex_lb & 0x04 ? true : false;
-
-		switch (vex_lb & 0x02)
-			/* decode prefix */
-		{
-		case 0x01:
-			{
-				group3 = p_66;
-			}
-			break;
-
-		case 0x02:
-			{
-				group1 = p_repz;
-			}
-			break;
-
-		case 0x03:
-			{
-				group1 = p_repnz;
-			}
-			break;
-
-		default:
-			break;
 		}
 
 		if (opcode1 == 0x0f)
