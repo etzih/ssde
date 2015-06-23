@@ -105,9 +105,10 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
 3.1 Various architectures
 
   Modular structure gives you ability to include only modules you need in
-  your project. Key file is "ssde.hpp". "*.cpp" files are optional and can
-  be omitted. e.g.: if you wish you use SSDE only for X86, then the files
-  you will have to include are "ssde.hpp" and "ssde_x86.cpp".
+  your project. Key file is "ssde.hpp". "*.cpp" and other "*.hpp" files are
+  optional and can be omitted. e.g.: if you wish you use SSDE only for X86,
+  then the files you will have to include are "ssde.hpp", "ssde_x86.hpp" and
+  "ssde_x86.cpp".
 
 3.2 Decoding errors
 
