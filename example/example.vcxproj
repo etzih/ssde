@@ -81,7 +81,6 @@
     <ClInclude Include="..\ssde\ssde.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\ssde\ssde_x64.cpp" />
     <ClCompile Include="..\ssde\ssde_x86.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
