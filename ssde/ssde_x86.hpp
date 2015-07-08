@@ -12,7 +12,7 @@ class ssde_x86 final : public ssde
 {
 public:
 	/*
-	* Prefixes of X86.
+	* X86 Prefixes.
 	*/
 	enum : uint8_t
 	{
@@ -50,13 +50,15 @@ public:
 	uint8_t group3 = 0;                     // Opcode prefix in 3rd group, 0 if none. 3rd group includes operand-size override prefix (p_66)
 	uint8_t group4 = 0;                     // Opcode prefix in 4th group, 0 if none. 4th group includes address-size override prefix (p_67)
 
+	bool    has_rex  = false;               // Has REX prefix.
+
 	bool    has_vex  = false;               // Has VEX prefix.
 	uint8_t vex_size = 0;                   // Size of VEX prefix (usually 2 or 3 bytes).
 	uint8_t vex_reg  = 0;                   // VEX register specifier.
-	uint8_t vex_r    = 0;                   // R field.
-	uint8_t vex_x    = 0;                   // X field.
-	uint8_t vex_b    = 0;                   // B field.
-	uint8_t vex_w    = 0;                   // W field.
+	bool    vex_r    = 0;                   // R field.
+	bool    vex_x    = 0;                   // X field.
+	bool    vex_b    = 0;                   // B field.
+	bool    vex_w    = 0;                   // W field.
 	uint8_t vex_l    = 0;                   // L field.
 
 	uint8_t opcode1 = 0;                    // 1st opcode byte.
