@@ -1,6 +1,7 @@
 example/Debug/*
 example/Release/*
 example/.vs/*
+.gitattributes
 
 *.o
 *.obj

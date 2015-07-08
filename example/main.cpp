@@ -16,7 +16,7 @@ int main(int argc, const char *argv[])
 	using namespace std;
 
 	ios_base::sync_with_stdio(false);
-
+	
 
 	const string bc =
 		"\x55"
@@ -46,7 +46,7 @@ int main(int argc, const char *argv[])
 	{
 		/* output address of the instruction */
 		cout << setfill('0') << setw(8) << hex << dis.ip << ": ";
-		
+
 		for (unsigned int i = 0; i < dis.length; ++i)
 			/* output instruction's bytes */
 		{
@@ -59,7 +59,7 @@ int main(int argc, const char *argv[])
 			cout << " ; -> " << setfill('0') << setw(8) << hex << dis.abs;
 		}
 
-		cout << endl;
+		cout << '\n';
 	}
 
 	return 0;
