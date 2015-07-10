@@ -14,6 +14,7 @@
     <ProjectGuid>{93A561DA-3D53-438F-8D3C-8A9B5782F8BE}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>example</RootNamespace>
+    <TargetPlatformVersion>8.1</TargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -43,9 +44,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <TargetName>ssde</TargetName>
+    <OutDir>$(SolutionDir)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <TargetName>ssde</TargetName>
+    <OutDir>$(SolutionDir)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -79,11 +84,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\ssde\ssde.hpp" />
-    <ClInclude Include="..\ssde\ssde_x64.hpp" />
     <ClInclude Include="..\ssde\ssde_x86.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\ssde\ssde_x64.cpp" />
     <ClCompile Include="..\ssde\ssde_x86.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

@@ -6,6 +6,8 @@ example/.vs/*
 *.o
 *.obj
 *.exe
+*.ilk
+*.pdb
 *.dll
 *.so
 *.dylib

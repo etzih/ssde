@@ -16,7 +16,7 @@ int main(int argc, const char *argv[])
 	using namespace std;
 
 	ios_base::sync_with_stdio(false);
-	
+
 
 	const string bc =
 		"\x55"
