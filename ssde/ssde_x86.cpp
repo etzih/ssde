@@ -32,8 +32,8 @@ enum : uint16_t
 	i16 = 1 << 4, /* has 16 bit imm */
 	i32 = 1 << 5, /* has 32 bit imm, which can be turned to 16 with 66 prefix */
 	am  = 1 << 6, /* instruction uses address mode, imm is a memory address */
-	vx  = 1 << 7, /* instruction requires VEX prefix */
-	mp  = 1 << 8, /* instruction has mandatory 66 prefix */
+	vx  = 1 << 7, /* instruction requires a VEX prefix */
+	mp  = 1 << 8, /* instruction has a mandatory 66 prefix */
 
 	r8  = i8  | rel,
 	r32 = i32 | rel,
@@ -290,9 +290,9 @@ bool ssde_x86::dec()
 
 				uint8_t vex_1 = buffer[ip + length++];
 
-				vex_r = vex_1 & 0x80 ? 1 : 0;
-				vex_x = vex_1 & 0x40 ? 1 : 0;
-				vex_b = vex_1 & 0x20 ? 1 : 0;
+				vex_r = vex_1 & 0x80 ? true : false;
+				vex_x = vex_1 & 0x40 ? true : false;
+				vex_b = vex_1 & 0x20 ? true : false;
 
 				switch (vex_1 & 0x1f)
 					/* decode first one or two opcode bytes */
@@ -334,21 +334,19 @@ bool ssde_x86::dec()
 			}
 
 
-			uint8_t vex_b = buffer[ip + length++];
+			uint8_t vex_2 = buffer[ip + length++];
 
 			if (prefix == 0xc4)
-				vex_w = vex_b & 0x80 ? true : false;
+				vex_w = vex_2 & 0x80 ? true : false;
 			else
 			{
-				vex_r = vex_b & 0x80 ? true : false;
+				vex_r = vex_2 & 0x80 ? true : false;
 			}
 
-			vex_l = vex_b & 0x04 ? 1 : 0;
-		
+			vex_l = vex_2 & 0x04 ? 1 : 0;
+			vex_reg = ~vex_2 & 0x78 >> 3;
 
-			vex_reg = ~vex_b & 0x78 >> 3;
-
-			switch (vex_b & 0x02)
+			switch (vex_2 & 0x02)
 				/* decode prefix */
 			{
 			case 0x01:
@@ -430,7 +428,7 @@ bool ssde_x86::dec()
 			switch (buffer[ip + length] >> 3 & 0x07)
 			{
 			case 0x00:
-			case 0x10:
+			case 0x01:
 				{
 					if (opcode1 == 0xf6)
 						flags = rm | i8;

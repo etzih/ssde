@@ -1,10 +1,13 @@
 example/Debug/*
 example/Release/*
 example/.vs/*
+.gitattributes
 
 *.o
 *.obj
 *.exe
+*.ilk
+*.pdb
 *.dll
 *.so
 *.dylib
