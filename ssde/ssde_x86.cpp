@@ -208,8 +208,8 @@ bool ssde_x86::dec()
 
 		/* 1st group */
 		if (prefix == p_lock  ||
-			prefix == p_repnz ||
-			prefix == p_repz)
+		    prefix == p_repnz ||
+		    prefix == p_repz)
 		{
 			if (group1 == p_none)
 				group1 = prefix;
@@ -219,8 +219,8 @@ bool ssde_x86::dec()
 
 		/* 2nd group */
 		if (prefix == p_seg_cs || prefix == p_seg_ss ||
-			prefix == p_seg_ds || prefix == p_seg_es ||
-			prefix == p_seg_fs || prefix == p_seg_gs
+		    prefix == p_seg_ds || prefix == p_seg_es ||
+		    prefix == p_seg_fs || prefix == p_seg_gs
 			/* p_branch_not_taken, p_branch_taken, */)
 		{
 			if (group2 == p_none)
@@ -254,9 +254,9 @@ bool ssde_x86::dec()
 	uint16_t flags = ::error;
 
 	if ((static_cast<uint8_t>(buffer[ip + length]) == 0xc4 ||
-		 static_cast<uint8_t>(buffer[ip + length]) == 0xc5 ||
-		 static_cast<uint8_t>(buffer[ip + length]) == 0x62) &&
-		buffer[ip + length+1] & 0x80)
+	     static_cast<uint8_t>(buffer[ip + length]) == 0xc5 ||
+	     static_cast<uint8_t>(buffer[ip + length]) == 0x62) &&
+	    buffer[ip + length+1] & 0x80)
 		/* looks like we've found a VEX prefix */
 	{
 		has_vex = true;
