@@ -25,15 +25,15 @@ enum : uint16_t
 {
 	none = 0,
 
-	rm  = 1 << 0, /* expect Mod byte */
-	ex  = 1 << 1, /* expect Mod opcode extension */
-	rel = 1 << 2, /* instruction's imm is a relative address */
-	i8  = 1 << 3, /* has 8 bit imm */
-	i16 = 1 << 4, /* has 16 bit imm */
-	i32 = 1 << 5, /* has 32 bit imm, which can be turned to 16 with 66 prefix */
-	am  = 1 << 6, /* instruction uses address mode, imm is a memory address */
-	vx  = 1 << 7, /* instruction requires a VEX prefix */
-	mp  = 1 << 8, /* instruction has a mandatory 66 prefix */
+	rm  = 1 << 0, // expect Mod byte
+	ex  = 1 << 1, // expect Mod opcode extension
+	rel = 1 << 2, // instruction's imm is a relative address
+	i8  = 1 << 3, // has 8 bit imm 
+	i16 = 1 << 4, // has 16 bit imm
+	i32 = 1 << 5, // has 32 bit imm, which can be turned to 16 with 66 prefix
+	am  = 1 << 6, // instruction uses address mode, imm is a memory address
+	vx  = 1 << 7, // instruction requires a VEX prefix
+	mp  = 1 << 8, // instruction has a mandatory 66 prefix
 
 	r8  = i8  | rel,
 	r32 = i32 | rel,
@@ -262,9 +262,9 @@ bool ssde_x86::dec()
 		has_vex = true;
 
 		if (group1 != 0 ||
-			group2 != 0 ||
-			group3 != 0 ||
-			group4 != 0)
+		    group2 != 0 ||
+		    group3 != 0 ||
+		    group4 != 0)
 		{
 			error = true;
 			error_opcode = true;
@@ -278,7 +278,7 @@ bool ssde_x86::dec()
 		{
 			vex_size = 4;
 
-			//TODO
+			// TODO(notnanocat): implement
 		}
 		else
 		{
@@ -337,7 +337,9 @@ bool ssde_x86::dec()
 			uint8_t vex_2 = buffer[ip + length++];
 
 			if (prefix == 0xc4)
+			{
 				vex_w = vex_2 & 0x80 ? true : false;
+			}
 			else
 			{
 				vex_r = vex_2 & 0x80 ? true : false;
