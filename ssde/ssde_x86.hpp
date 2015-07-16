@@ -32,6 +32,9 @@ public:
 
 		p_branch_not_taken = 0x2e,          // Branch not taken hint.
 		p_branch_taken     = 0x3e,          // Branch taken hint.
+
+		p_precision_double = 0xf2,          // Double precision scalar prefix
+		p_precision_single = 0xf3,          // Single precision scalar prefix
 	};
 
 	using ssde::ssde;

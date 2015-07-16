@@ -54,7 +54,7 @@ static const uint16_t op_table[256] =
 	 none , none ,  rm  ,  rm  , error, error, error, error,  i32 ,rm|i32,  i8  , rm|i8, none , none , none , none , /* 6x */
 	  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  , /* 7x */
 	 rm|i8,rm|i32, rm|i8, rm|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 8x */
-	 none , none , none , none , none , none , none , none , none , none,i32|i16, none , none , none , none , none , /* 9x */
+	 none , none , none , none , none , none , none , none , none , none,i32|i16, error, none , none , none , none , /* 9x */
 	i32|am,i32|am,i32|am,i32|am, none , none , none , none ,  i8  ,  i32 , none , none , none , none , none , none , /* Ax */
 	  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 , /* Bx */
 	 rm|i8, rm|i8,  i16 , none ,  rm  ,  rm  , rm|i8,rm|i32,i16|i8, none ,  i16 , none , none ,  i8  , none , none , /* Cx */
@@ -192,7 +192,7 @@ bool ssde_x86::dec()
 
 	reset_fields();
 
-	for (unsigned int x = 0; x < 15; ++x, ++length)
+	for (unsigned int x = 0; x < 14; ++x, ++length)
 		/*
 		* This is prefix analyzer. It behaves exactly the
 		* same way real CPUs analyze instructions for
