@@ -43,14 +43,12 @@ private:
 
 public:
 	bool error_lock = false;                // LOCK prefix is not allowed.
-	bool error_vex  = false;                // Instruction is only allowed to be VEX encoded.
+	bool error_novex = false;               // Instruction is only allowed to be VEX encoded.
 
 	uint8_t group1 = 0;                     // Opcode prefix in 1st group, 0 if none. 1st group includes LOCK, REPNZ and REPZ prefixes.
 	uint8_t group2 = 0;                     // Opcode prefix in 2nd group, 0 if none. 2nd group includes segment prefixes and/or branch hints.
 	uint8_t group3 = 0;                     // Opcode prefix in 3rd group, 0 if none. 3rd group includes operand-size override prefix (p_66)
 	uint8_t group4 = 0;                     // Opcode prefix in 4th group, 0 if none. 4th group includes address-size override prefix (p_67)
-
-	bool    has_rex  = false;               // Has REX prefix.
 
 	bool    has_vex  = false;               // Has VEX prefix.
 	uint8_t vex_size = 0;                   // Size of VEX prefix (usually 2 or 3 bytes).

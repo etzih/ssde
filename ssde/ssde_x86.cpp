@@ -138,6 +138,7 @@ static const uint16_t op_table_3a[256] =
 	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* Fx */
 };
 
+
 void ssde_x86::reset_fields()
 {
 	length = 0;
@@ -147,7 +148,7 @@ void ssde_x86::reset_fields()
 	error_operand = false;
 	error_length  = false;
 	error_lock    = false;
-	error_vex     = false;
+	error_novex   = false;
 
 	has_modrm = false;
 	has_sib   = false;
@@ -168,10 +169,10 @@ void ssde_x86::reset_fields()
 
 	has_vex = false;
 	vex_reg = 0;
-	vex_r   = 0;
-	vex_x   = 0;
-	vex_b   = 0;
-	vex_w   = 0;
+	vex_r   = false;
+	vex_x   = false;
+	vex_b   = false;
+	vex_w   = false;
 	vex_l   = 0;
 }
 
@@ -265,6 +266,7 @@ bool ssde_x86::dec()
 		    group2 != 0 ||
 		    group3 != 0 ||
 		    group4 != 0)
+			/* VEX-encoded instructions are not allowed to be preceeded by legacy prefixes */
 		{
 			error = true;
 			error_opcode = true;
@@ -321,7 +323,7 @@ bool ssde_x86::dec()
 					{
 						error = true;
 						error_opcode = true;
-						error_vex = true;
+						error_novex = true;
 					}
 					break;
 				}
@@ -457,7 +459,7 @@ bool ssde_x86::dec()
 			/* this instruction can only be VEX-encoded */
 		{
 			error = true;
-			error_vex = true;
+			error_novex = true;
 		}
 	}
 
@@ -639,7 +641,7 @@ bool ssde_x86::dec()
 			rel_size = imm_size;
 			rel = imm;
 
-			if (rel & (rel_size*8 - 1))
+			if (rel & (1 << (rel_size*8 - 1)))
 				/* rel is signed, extend the sign if needed */
 			{
 				switch (rel_size)
