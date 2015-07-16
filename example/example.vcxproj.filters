@@ -16,18 +16,12 @@
     <ClInclude Include="..\ssde\ssde_x86.hpp">
       <Filter>ssde</Filter>
     </ClInclude>
-    <ClInclude Include="..\ssde\ssde_x64.hpp">
-      <Filter>ssde</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
     <ClCompile Include="..\ssde\ssde_x86.cpp">
-      <Filter>ssde</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ssde\ssde_x64.cpp">
       <Filter>ssde</Filter>
     </ClCompile>
   </ItemGroup>
