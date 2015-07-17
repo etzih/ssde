@@ -221,6 +221,9 @@ bool ssde_x64::dec()
 			if (group1 == p_none)
 				group1 = prefix;
 
+			if (has_rex)
+				has_rex = false;
+
 			continue;
 		}
 
@@ -233,6 +236,9 @@ bool ssde_x64::dec()
 			if (group2 == p_none)
 				group2 = prefix;
 
+			if (has_rex)
+				has_rex = false;
+
 			continue;
 		}
 
@@ -241,6 +247,9 @@ bool ssde_x64::dec()
 		{
 			if (group3 == p_none)
 				group3 = prefix;
+
+			if (has_rex)
+				has_rex = false;
 
 			continue;
 		}
@@ -251,6 +260,9 @@ bool ssde_x64::dec()
 			if (group4 == p_none)
 				group4 = prefix;
 
+			if (has_rex)
+				has_rex = false;
+
 			continue;
 		}
 
@@ -260,7 +272,8 @@ bool ssde_x64::dec()
 			* Unlike all legacy prefixes, if CPU
 			* meets multiple of REX prefixes, it
 			* will only take the last one into
-			* account.
+			* account. REX prefixes before legacy
+			* ones are silently ignored.
 			*/
 		{
 			has_rex = true;
@@ -355,7 +368,6 @@ bool ssde_x64::dec()
 					{
 						error = true;
 						error_opcode = true;
-						error_novex = true;
 					}
 					break;
 				}
