@@ -11,18 +11,17 @@ and documentation in the language you speak.
 
 Check *example/* to see how SSDE can be used.
 
-           Supported architectures and extensions
+         Supported architectures and extensions
 	 ______________________________________________
 	|     |                                        |
 	| x86 | VMX, AES, SHA, MMX                     |
-	|     | SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2 |
-	|     | AVX, AVX2, FMA3                        |
-	|     |                                        |
+	|  /  | SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2 |
+	| x64 | AVX, AVX2, FMA3                        |
 	|_____|________________________________________|
 
-             List of machines SSDE was tested on
-	 ___________________________________________
-	|                 |                 |       |
-	| Core i3 2350m   | Windows 8.1 x64 | 64 LE |
-	| ARMv6 processor | Raspbian 7      | 32 LE |
-	|_________________|_________________|_______|
+           List of machines SSDE was tested on
+	 ______________________________________________
+	|                   |                  |       |
+	| Core i3 2350m     | Windows 8.1 x64  | 64 LE |
+	| ARMv6 processor   | Raspbian 7       | 32 LE |
+	|___________________|_________________ |_______|
