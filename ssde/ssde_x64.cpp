@@ -1,8 +1,8 @@
 /*
-* The SSDE implementation for X86 instruction set.
+* The SSDE implementation for X64 instruction set.
 * Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.md
 */
-#include "ssde_x86.hpp"
+#include "ssde_x64.hpp"
 
 #include <string>
 
@@ -45,21 +45,21 @@ enum : uint16_t
 static const uint16_t op_table[256] =
 {
 	/*x0  |  x1  |  x2  |  x3  |  x4  |  x5  |  x6  |  x7  |  x8  |  x9  |  xA  |  xB  |  xC  |  xD  |  xE  |  xF */
-	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , none , none ,  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , none , error, /* 0x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , none , none ,  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , none , none , /* 1x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, none ,  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, none , /* 2x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, none ,  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, none , /* 3x */
-	 none , none , none , none , none , none , none , none , none , none , none , none , none , none , none , none , /* 4x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, error,  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, error, /* 0x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, error,  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, error, /* 1x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, error,  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, error, /* 2x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, error,  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, error, /* 3x */
+	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 4x */
 	 none , none , none , none , none , none , none , none , none , none , none , none , none , none , none , none , /* 5x */
-	 none , none ,  rm  ,  rm  , error, error, error, error,  i32 ,rm|i32,  i8  , rm|i8, none , none , none , none , /* 6x */
+	 error, error, error,  rm  , error, error, error, error,  i32 ,rm|i32,  i8  , rm|i8, none , none , none , none , /* 6x */
 	  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  , /* 7x */
-	 rm|i8,rm|i32, rm|i8, rm|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 8x */
-	 none , none , none , none , none , none , none , none , none , none,i32|i16, error, none , none , none , none , /* 9x */
+	 rm|i8,rm|i32, error, rm|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 8x */
+	 none , none , none , none , none , none , none , none , none , none , error, error, none , none , none , none , /* 9x */
 	i32|am,i32|am,i32|am,i32|am, none , none , none , none ,  i8  ,  i32 , none , none , none , none , none , none , /* Ax */
 	  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 , /* Bx */
-	 rm|i8, rm|i8,  i16 , none ,  rm  ,  rm  , rm|i8,rm|i32,i16|i8, none ,  i16 , none , none ,  i8  , none , none , /* Cx */
-	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i8  , none , none ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Dx */
-	  r8  ,  r8  ,  r8  ,  r8  ,  i8  ,  i8  ,  i8  ,  i8  ,  r32 ,  r32,i32|i16,  r8  , none , none , none , none , /* Ex */
+	 rm|i8, rm|i8,  i16 , none , error, error, rm|i8,rm|i32,i16|i8, none ,  i16 , none , none ,  i8  , none , none , /* Cx */
+	  rm  ,  rm  ,  rm  ,  rm  , error, error, error, none ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Dx */
+	  r8  ,  r8  ,  r8  ,  r8  ,  i8  ,  i8  ,  i8  ,  i8  ,  r32 ,  r32 , error,  r8  , none , none , none , none , /* Ex */
 	 error, none , error, error, none , none , error, error, none , none , none , none , none , none ,  rm  ,  rm  , /* Fx */
 };
 
@@ -139,7 +139,7 @@ static const uint16_t op_table_3a[256] =
 };
 
 
-void ssde_x86::reset_fields()
+void ssde_x64::reset_fields()
 {
 	length = 0;
 
@@ -167,6 +167,12 @@ void ssde_x86::reset_fields()
 	opcode2 = 0;
 	opcode3 = 0;
 
+	has_rex = false;
+	rex_w   = false;
+	rex_r   = false;
+	rex_x   = false;
+	rex_b   = false;
+
 	has_vex = false;
 	vex_reg = 0;
 	vex_r   = false;
@@ -176,7 +182,7 @@ void ssde_x86::reset_fields()
 	vex_l   = 0;
 }
 
-bool ssde_x86::dec()
+bool ssde_x64::dec()
 {
 	if (ip_overflow)
 		return false;
@@ -215,6 +221,9 @@ bool ssde_x86::dec()
 			if (group1 == p_none)
 				group1 = prefix;
 
+			if (has_rex)
+				has_rex = false;
+
 			continue;
 		}
 
@@ -227,6 +236,9 @@ bool ssde_x86::dec()
 			if (group2 == p_none)
 				group2 = prefix;
 
+			if (has_rex)
+				has_rex = false;
+
 			continue;
 		}
 
@@ -236,6 +248,9 @@ bool ssde_x86::dec()
 			if (group3 == p_none)
 				group3 = prefix;
 
+			if (has_rex)
+				has_rex = false;
+
 			continue;
 		}
 
@@ -244,6 +259,29 @@ bool ssde_x86::dec()
 		{
 			if (group4 == p_none)
 				group4 = prefix;
+
+			if (has_rex)
+				has_rex = false;
+
+			continue;
+		}
+
+		/* REX prefix */
+		if ((prefix & 0xf0) == 0x40)
+			/*
+			* Unlike all legacy prefixes, if CPU
+			* meets multiple of REX prefixes, it
+			* will only take the last one into
+			* account. REX prefixes before legacy
+			* ones are silently ignored.
+			*/
+		{
+			has_rex = true;
+
+			rex_w = prefix & 0x08 ? true : false;
+			rex_r = prefix & 0x04 ? true : false;
+			rex_x = prefix & 0x02 ? true : false;
+			rex_b = prefix & 0x01 ? true : false;
 
 			continue;
 		}
@@ -267,6 +305,13 @@ bool ssde_x86::dec()
 		    group3 != 0 ||
 		    group4 != 0)
 			/* VEX-encoded instructions are not allowed to be preceeded by legacy prefixes */
+		{
+			error = true;
+			error_opcode = true;
+		}
+
+		if (has_rex)
+			/* VEX-encoded instructions are not allowed to have REX either */
 		{
 			error = true;
 			error_opcode = true;

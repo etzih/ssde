@@ -1,18 +1,18 @@
 /*
-* The SSDE header file for ssde_x86.cpp.
+* The SSDE header file for ssde_x64.cpp.
 * Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.md
 */
 #pragma once
 #include "ssde.hpp"
 
 /*
-* SSDE disassembler for X86 architecture.
+* SSDE disassembler for X86-64 architecture.
 */
-class ssde_x86 final : public ssde
+class ssde_x64 final : public ssde
 {
 public:
 	/*
-	* X86 Prefixes.
+	* Legacy X86 prefixes.
 	*/
 	enum : uint8_t
 	{
@@ -32,9 +32,6 @@ public:
 
 		p_branch_not_taken = 0x2e,          // Branch not taken hint.
 		p_branch_taken     = 0x3e,          // Branch taken hint.
-
-		p_precision_double = 0xf2,          // Double precision scalar prefix
-		p_precision_single = 0xf3,          // Single precision scalar prefix
 	};
 
 	using ssde::ssde;
@@ -53,13 +50,19 @@ public:
 	uint8_t group3 = 0;                     // Opcode prefix in 3rd group, 0 if none. 3rd group includes operand-size override prefix (p_66)
 	uint8_t group4 = 0;                     // Opcode prefix in 4th group, 0 if none. 4th group includes address-size override prefix (p_67)
 
+	bool    has_rex = false;                // Has REX prefix.
+	bool    rex_w   = false;                // W field.
+	bool    rex_r   = false;                // R field.
+	bool    rex_x   = false;                // X field.
+	bool    rex_b   = false;                // B field.
+
 	bool    has_vex  = false;               // Has VEX prefix.
 	uint8_t vex_size = 0;                   // Size of VEX prefix (usually 2 or 3 bytes).
 	uint8_t vex_reg  = 0;                   // VEX register specifier.
-	bool    vex_r    = 0;                   // R field.
-	bool    vex_x    = 0;                   // X field.
-	bool    vex_b    = 0;                   // B field.
-	bool    vex_w    = 0;                   // W field.
+	bool    vex_r    = false;               // R field.
+	bool    vex_x    = false;               // X field.
+	bool    vex_b    = false;               // B field.
+	bool    vex_w    = false;               // W field.
 	uint8_t vex_l    = 0;                   // L field.
 
 	uint8_t opcode1 = 0;                    // 1st opcode byte.
@@ -80,16 +83,15 @@ public:
 	unsigned int disp_size = 0;             // Size of address displacement, in bytes.
 	uint32_t     disp      = 0;             // Displacement value.
 
-
 	bool         has_imm   = false;         // Has immediate value.
 	bool         has_imm2  = false;         // Has 2 immediate values.
 	unsigned int imm_size  = 0;             // Size of the first immediate value, in bytes.
 	unsigned int imm2_size = 0;             // Size of the second immediate value, in bytes.
-	uint32_t     imm       = 0;             // First immediate value.
-	uint32_t     imm2      = 0;             // Second immediate value.
+	uint64_t     imm       = 0;             // First immediate value.
+	uint64_t     imm2      = 0;             // Second immediate value.
 
 	bool         has_rel  = false;          // Has relative address.
 	unsigned int rel_size = 0;              // Size of relative address, in bytes.
 	int32_t      rel      = 0;              // Relative address value.
-	uint32_t     abs      = 0;              // Absolute address value.
+	uint64_t     abs      = 0;              // Absolute address value.
 };
