@@ -323,7 +323,6 @@ bool ssde_x86::dec()
 					{
 						error = true;
 						error_opcode = true;
-						error_novex = true;
 					}
 					break;
 				}
