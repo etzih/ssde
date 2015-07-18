@@ -53,17 +53,16 @@ public:
 	bool    has_rex = false;                // Has REX prefix.
 	bool    rex_w   = false;                // W field.
 	bool    rex_r   = false;                // R field.
+	bool    rex_rr  = false;                // R' field.
 	bool    rex_x   = false;                // X field.
 	bool    rex_b   = false;                // B field.
 
-	bool    has_vex  = false;               // Has VEX prefix.
-	uint8_t vex_size = 0;                   // Size of VEX prefix (usually 2 or 3 bytes).
-	uint8_t vex_reg  = 0;                   // VEX register specifier.
-	bool    vex_r    = false;               // R field.
-	bool    vex_x    = false;               // X field.
-	bool    vex_b    = false;               // B field.
-	bool    vex_w    = false;               // W field.
-	uint8_t vex_l    = 0;                   // L field.
+	bool    has_vex   = false;              // Has VEX prefix.
+	bool    vex_merge = false;              // Merge mode specifier; z field.
+	uint8_t vex_size  = 0;                  // Size of VEX prefix (usually 2 or 3 bytes).
+	uint8_t vex_reg   = 0;                  // VEX register specifier.
+	/* VEX.W, VEX.R, VEX.X, VEX.B are aliased to their REX equivalents */
+	uint8_t vex_l     = 0;                  // VEX L field.
 
 	uint8_t opcode1 = 0;                    // 1st opcode byte.
 	uint8_t opcode2 = 0;                    // 2nd opcode byte.

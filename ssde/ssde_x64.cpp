@@ -26,15 +26,17 @@ enum : uint16_t
 	none = 0,
 
 	rm  = 1 << 0, // expect Mod byte
-	ex  = 1 << 1, // expect Mod opcode extension
+	ox  = 1 << 1, // expect Mod opcode extension + change behaviour of REX.B
 	rel = 1 << 2, // instruction's imm is a relative address
-	i8  = 1 << 3, // has 8 bit imm 
+	i8  = 1 << 3, // has  8 bit imm
 	i16 = 1 << 4, // has 16 bit imm
 	i32 = 1 << 5, // has 32 bit imm, which can be turned to 16 with 66 prefix
-	am  = 1 << 6, // instruction uses address mode, imm is a memory address
-	vx  = 1 << 7, // instruction requires a VEX prefix
-	mp  = 1 << 8, // instruction has a mandatory 66 prefix
+	rw  = 1 << 6, // supports REX.W
+	am  = 1 << 7, // instruction uses address mode, imm is a memory address
+	vx  = 1 << 8, // instruction requires a VEX prefix
+	mp  = 1 << 9, // instruction has a mandatory 66 prefix
 
+	ex  = rm  | ox,
 	r8  = i8  | rel,
 	r32 = i32 | rel,
 
@@ -53,14 +55,14 @@ static const uint16_t op_table[256] =
 	 none , none , none , none , none , none , none , none , none , none , none , none , none , none , none , none , /* 5x */
 	 error, error, error,  rm  , error, error, error, error,  i32 ,rm|i32,  i8  , rm|i8, none , none , none , none , /* 6x */
 	  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  , /* 7x */
-	 rm|i8,rm|i32, error, rm|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 8x */
+	 ex|i8,ex|i32, error, ex|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  ex  , /* 8x */
 	 none , none , none , none , none , none , none , none , none , none , error, error, none , none , none , none , /* 9x */
-	i32|am,i32|am,i32|am,i32|am, none , none , none , none ,  i8  ,  i32 , none , none , none , none , none , none , /* Ax */
-	  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 , /* Bx */
-	 rm|i8, rm|i8,  i16 , none , error, error, rm|i8,rm|i32,i16|i8, none ,  i16 , none , none ,  i8  , none , none , /* Cx */
-	  rm  ,  rm  ,  rm  ,  rm  , error, error, error, none ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Dx */
+	  am  ,  am  ,  am  ,  am  , none , none , none , none ,  i8  ,  i32 , none , none , none , none , none , none , /* Ax */
+	  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,rw|i32,rw|i32,rw|i32,rw|i32,rw|i32,rw|i32,rw|i32,rw|i32, /* Bx */
+	 ex|i8, ex|i8,  i16 , none , error, error, ex|i8,ex|i32,i16|i8, none ,  i16 , none , none ,  i8  , none , none , /* Cx */
+	  ex  ,  ex  ,  ex  ,  ex  , error, error, error, none ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  , /* Dx */
 	  r8  ,  r8  ,  r8  ,  r8  ,  i8  ,  i8  ,  i8  ,  i8  ,  r32 ,  r32 , error,  r8  , none , none , none , none , /* Ex */
-	 error, none , error, error, none , none , error, error, none , none , none , none , none , none ,  rm  ,  rm  , /* Fx */
+	 error, none , error, error, none , none , error, error, none , none , none , none , none , none ,  rm  ,  ex  , /* Fx */
 };
 
 /*
@@ -70,19 +72,19 @@ static const uint16_t op_table[256] =
 static const uint16_t op_table_0f[256] =
 {
 	/*x0  |  x1  |  x2  |  x3  |  x4  |  x5  |  x6  |  x7  |  x8  |  x9  |  xA  |  xB  |  xC  |  xD  |  xE  |  xF */
-	  rm  ,  rm  ,  rm  ,  rm  , error, error, none , error, none , none , error, none , error,  rm  , none , error, /* 0x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 1x */
+	  ex  ,  ex  ,  rm  ,  rm  , error, error, none , error, none , none , error, none , error,  rm  , none , error, /* 0x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  ex  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  ex  , /* 1x */
 	  rm  ,  rm  ,  rm  ,  rm  ,  rm  , error,  rm  , error,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 2x */
 	 none , none , none , none , none , none , error, none , error, error, error, error, error, error, error, error, /* 3x */
 	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 4x */
 	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 5x */
 	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 6x */
-	 rm|i8, rm|i8, rm|i8, rm|i8,  rm  ,  rm  ,  rm  , none ,  rm  ,  rm  , error, error,  rm  ,  rm  ,  rm  ,  rm  , /* 7x */
+	 rm|i8, ex|i8, ex|i8, ex|i8,  rm  ,  rm  ,  rm  , none ,  rm  ,  rm  , error, error,  rm  ,  rm  ,  rm  ,  rm  , /* 7x */
 	  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 , /* 8x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 9x */
-	 none , none , none ,  rm  , rm|i8,  rm  , error, error, none , none , none ,  rm  , rm|i8,  rm  ,  rm  ,  rm  , /* Ax */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , none ,  i8  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Bx */
-	  rm  ,  rm  , rm|i8,  rm  , rm|i8, rm|i8, rm|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Cx */
+	  ex  ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  ,  ex  , /* 9x */
+	 none , none , none ,  rm  , rm|i8,  rm  , error, error, none , none , none ,  rm  , rm|i8,  rm  ,  ex  ,  rm  , /* Ax */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , none , ex|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Bx */
+	  rm  ,  rm  , rm|i8,  rm  , rm|i8, rm|i8, rm|i8,  ex  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Cx */
 	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Dx */
 	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Ex */
 	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Fx */
@@ -170,16 +172,15 @@ void ssde_x64::reset_fields()
 	has_rex = false;
 	rex_w   = false;
 	rex_r   = false;
+	rex_rr  = false;
 	rex_x   = false;
 	rex_b   = false;
 
-	has_vex = false;
-	vex_reg = 0;
-	vex_r   = false;
-	vex_x   = false;
-	vex_b   = false;
-	vex_w   = false;
-	vex_l   = 0;
+	has_vex   = false;
+	vex_merge = false;
+	vex_reg   = 0;
+	vex_v     = false;
+	vex_l     = 0;
 }
 
 bool ssde_x64::dec()
@@ -292,10 +293,9 @@ bool ssde_x64::dec()
 	
 	uint16_t flags = ::error;
 
-	if ((static_cast<uint8_t>(buffer[ip + length]) == 0xc4 ||
-	     static_cast<uint8_t>(buffer[ip + length]) == 0xc5 ||
-	     static_cast<uint8_t>(buffer[ip + length]) == 0x62) &&
-	    buffer[ip + length+1] & 0x80)
+	if (static_cast<uint8_t>(buffer[ip + length]) == 0xc4 ||
+	    static_cast<uint8_t>(buffer[ip + length]) == 0xc5 ||
+	    static_cast<uint8_t>(buffer[ip + length]) == 0x62)
 		/* looks like we've found a VEX prefix */
 	{
 		has_vex = true;
@@ -328,6 +328,7 @@ bool ssde_x64::dec()
 			// TODO(notnanocat): implement
 		}
 		else
+			/* 2 or 3 byte VEX */
 		{
 			if (prefix == 0xc4)
 				/* this is a 3 byte VEX */
@@ -337,46 +338,37 @@ bool ssde_x64::dec()
 
 				uint8_t vex_1 = buffer[ip + length++];
 
-				vex_r = vex_1 & 0x80 ? true : false;
-				vex_x = vex_1 & 0x40 ? true : false;
-				vex_b = vex_1 & 0x20 ? true : false;
+				rex_r = vex_1 & 0x80 ? false : true;
+				rex_x = vex_1 & 0x40 ? false : true;
+				rex_b = vex_1 & 0x20 ? false : true;
 
 				switch (vex_1 & 0x1f)
-					/* decode first one or two opcode bytes */
+					/* decode first one or two opcode bytes m-mmmm */
 				{
 				case 0x01:
-					{
-						opcode1 = 0x0f;
-					}
+					opcode1 = 0x0f;
 					break;
 
 				case 0x02:
-					{
-						opcode1 = 0x0f;
-						opcode2 = 0x38;
-					}
+					opcode1 = 0x0f;
+					opcode2 = 0x38;
 					break;
 
 				case 0x03:
-					{
-						opcode1 = 0x0f;
-						opcode2 = 0x3a;
-					}
+					opcode1 = 0x0f;
+					opcode2 = 0x3a;
 					break;
 
 				default:
-					{
-						error = true;
-						error_opcode = true;
-					}
+					error = true;
+					error_opcode = true;
 					break;
 				}
 			}
 			else
 			{
 				vex_size = 2;
-
-				opcode1 = 0x0f;
+				opcode1  = 0x0f;
 			}
 
 
@@ -384,35 +376,31 @@ bool ssde_x64::dec()
 
 			if (prefix == 0xc4)
 			{
-				vex_w = vex_2 & 0x80 ? true : false;
+				rex_w = vex_2 & 0x80 ? true : false;
 			}
 			else
 			{
-				vex_r = vex_2 & 0x80 ? true : false;
+				rex_r = vex_2 & 0x80 ? false : true;
 			}
 
 			vex_l = vex_2 & 0x04 ? 1 : 0;
-			vex_reg = ~vex_2 & 0x78 >> 3;
 
-			switch (vex_2 & 0x02)
-				/* decode prefix */
+			/* decode destination register vvvv */
+			vex_reg = ~vex_2 & (0x0f << 3) >> 3;
+
+			switch (vex_2 & 0x03)
+				/* decode prefix pp */
 			{
 			case 0x01:
-				{
-					group3 = p_66;
-				}
+				group3 = p_66;
 				break;
 
 			case 0x02:
-				{
-					group1 = p_repz;
-				}
+				group1 = p_repz;
 				break;
 
 			case 0x03:
-				{
-					group1 = p_repnz;
-				}
+				group1 = p_repnz;
 				break;
 
 			default:
@@ -463,36 +451,6 @@ bool ssde_x64::dec()
 				flags = op_table_0f[opcode2];
 			}
 		}
-		else if (opcode1 == 0xf6 || opcode1 == 0xf7)
-			/*
-			* These are two exceptional opcodes that extend
-			* using 3 bits of Mod R/M byte and they lack
-			* consistent flags. Instead of creating a new
-			* flags table for each extended opcode, I decided
-			* to put this little bit of code that is dedicated
-			* to these two exceptional opcodes.
-			*/
-		{
-			switch (buffer[ip + length] >> 3 & 0x07)
-			{
-			case 0x00:
-			case 0x01:
-				{
-					if (opcode1 == 0xf6)
-						flags = rm | i8;
-
-					if (opcode1 == 0xf7)
-						flags = rm | i32;
-				}
-				break;
-
-			default:
-				{
-					flags = rm;
-				}
-				break;
-			}
-		}
 		else
 			/* this is a regular single opcode instruction */
 		{
@@ -504,6 +462,35 @@ bool ssde_x64::dec()
 		{
 			error = true;
 			error_novex = true;
+		}
+	}
+
+	if (opcode1 == 0xf6 || opcode1 == 0xf7)
+		/*
+		* These are two exceptional opcodes that extend
+		* using 3 bits of Mod R/M byte and they lack
+		* consistent flags. Instead of creating a new
+		* flags table for each extended opcode, I decided
+		* to put this little bit of code that is dedicated
+		* to these two exceptional opcodes.
+		*/
+	{
+		switch (buffer[ip + length] >> 3 & 0x07)
+		{
+		case 0x00:
+		case 0x01:
+			{
+				if (opcode1 == 0xf6)
+					flags = ex | i8;
+
+				if (opcode1 == 0xf7)
+					flags = ex | rw | i32;
+			}
+			break;
+
+		default:
+			flags = rm;
+			break;
 		}
 	}
 
@@ -621,14 +608,14 @@ bool ssde_x64::dec()
 			/* address mode instructions behave a little differently */
 		{
 			has_imm  = true;
-			imm_size = group4 == p_67 ? 2 : 4;
+			imm_size = group4 != p_67 ? 8 : 4;
 		}
 		else
 		{
 			if (flags & ::i32)
 			{
 				has_imm  = true;
-				imm_size = group3 == p_66 ? 2 : 4;
+				imm_size = rex_w && (flags & ::rw) ? 8 : group3 != p_66 ? 4 : 2;
 			}
 
 			if (flags & ::i16)
@@ -683,7 +670,7 @@ bool ssde_x64::dec()
 			has_imm = false;
 
 			rel_size = imm_size;
-			rel = imm;
+			rel = static_cast<uint32_t>(imm);
 
 			if (rel & (1 << (rel_size*8 - 1)))
 				/* rel is signed, extend the sign if needed */
@@ -691,15 +678,11 @@ bool ssde_x64::dec()
 				switch (rel_size)
 				{
 				case 1:
-					{
-						rel |= 0xffffff00;
-					}
+					rel |= 0xffffff00;
 					break;
 
 				case 2:
-					{
-						rel |= 0xffff0000;
-					}
+					rel |= 0xffff0000;
 					break;
 
 				default:
