@@ -26,14 +26,13 @@ enum : uint16_t
 	none = 0,
 
 	rm  = 1 << 0, // expect Mod byte
-	ex  = 1 << 1, // expect Mod opcode extension
-	rel = 1 << 2, // instruction's imm is a relative address
-	i8  = 1 << 3, // has 8 bit imm 
-	i16 = 1 << 4, // has 16 bit imm
-	i32 = 1 << 5, // has 32 bit imm, which can be turned to 16 with 66 prefix
-	am  = 1 << 6, // instruction uses address mode, imm is a memory address
-	vx  = 1 << 7, // instruction requires a VEX prefix
-	mp  = 1 << 8, // instruction has a mandatory 66 prefix
+	rel = 1 << 1, // instruction's imm is a relative address
+	i8  = 1 << 2, // has  8 bit imm
+	i16 = 1 << 3, // has 16 bit imm
+	i32 = 1 << 4, // has 32 bit imm, which can be turned to 16 with 66 prefix
+	am  = 1 << 5, // instruction uses address mode, imm is a memory address
+	vx  = 1 << 6, // instruction requires a VEX prefix
+	mp  = 1 << 7, // instruction has a mandatory 66 prefix
 
 	r8  = i8  | rel,
 	r32 = i32 | rel,
@@ -55,7 +54,7 @@ static const uint16_t op_table[256] =
 	  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  , /* 7x */
 	 rm|i8,rm|i32, rm|i8, rm|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 8x */
 	 none , none , none , none , none , none , none , none , none , none,i32|i16, error, none , none , none , none , /* 9x */
-	i32|am,i32|am,i32|am,i32|am, none , none , none , none ,  i8  ,  i32 , none , none , none , none , none , none , /* Ax */
+	  am  ,  am  ,  am  ,  am  , none , none , none , none ,  i8  ,  i32 , none , none , none , none , none , none , /* Ax */
 	  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 , /* Bx */
 	 rm|i8, rm|i8,  i16 , none ,  rm  ,  rm  , rm|i8,rm|i32,i16|i8, none ,  i16 , none , none ,  i8  , none , none , /* Cx */
 	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i8  , none , none ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Dx */
@@ -81,7 +80,7 @@ static const uint16_t op_table_0f[256] =
 	  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 , /* 8x */
 	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 9x */
 	 none , none , none ,  rm  , rm|i8,  rm  , error, error, none , none , none ,  rm  , rm|i8,  rm  ,  rm  ,  rm  , /* Ax */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , none ,  i8  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Bx */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , none , rm|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Bx */
 	  rm  ,  rm  , rm|i8,  rm  , rm|i8, rm|i8, rm|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Cx */
 	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Dx */
 	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Ex */
@@ -418,36 +417,6 @@ bool ssde_x86::dec()
 				flags = op_table_0f[opcode2];
 			}
 		}
-		else if (opcode1 == 0xf6 || opcode1 == 0xf7)
-			/*
-			* These are two exceptional opcodes that extend
-			* using 3 bits of Mod R/M byte and they lack
-			* consistent flags. Instead of creating a new
-			* flags table for each extended opcode, I decided
-			* to put this little bit of code that is dedicated
-			* to these two exceptional opcodes.
-			*/
-		{
-			switch (buffer[ip + length] >> 3 & 0x07)
-			{
-			case 0x00:
-			case 0x01:
-				{
-					if (opcode1 == 0xf6)
-						flags = rm | i8;
-
-					if (opcode1 == 0xf7)
-						flags = rm | i32;
-				}
-				break;
-
-			default:
-				{
-					flags = rm;
-				}
-				break;
-			}
-		}
 		else
 			/* this is a regular single opcode instruction */
 		{
@@ -459,6 +428,37 @@ bool ssde_x86::dec()
 		{
 			error = true;
 			error_novex = true;
+		}
+	}
+
+	if (opcode1 == 0xf6 || opcode1 == 0xf7)
+		/*
+		* These are two exceptional opcodes that extend
+		* using 3 bits of Mod R/M byte and they lack
+		* consistent flags. Instead of creating a new
+		* flags table for each extended opcode, I decided
+		* to put this little bit of code that is dedicated
+		* to these two exceptional opcodes.
+		*/
+	{
+		switch (buffer[ip + length] >> 3 & 0x07)
+		{
+		case 0x00:
+		case 0x01:
+			{
+				if (opcode1 == 0xf6)
+					flags = rm | i8;
+
+				if (opcode1 == 0xf7)
+					flags = rm | i32;
+			}
+			break;
+
+		default:
+			{
+				flags = rm;
+			}
+			break;
 		}
 	}
 
@@ -576,14 +576,14 @@ bool ssde_x86::dec()
 			/* address mode instructions behave a little differently */
 		{
 			has_imm  = true;
-			imm_size = group4 == p_67 ? 2 : 4;
+			imm_size = group4 != p_67 ? 4 : 2;
 		}
 		else
 		{
 			if (flags & ::i32)
 			{
 				has_imm  = true;
-				imm_size = group3 == p_66 ? 2 : 4;
+				imm_size = group3 != p_66 ? 4 : 2;
 			}
 
 			if (flags & ::i16)
