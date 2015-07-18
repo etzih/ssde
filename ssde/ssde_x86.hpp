@@ -53,14 +53,12 @@ public:
 	uint8_t group3 = 0;                     // Opcode prefix in 3rd group, 0 if none. 3rd group includes operand-size override prefix (p_66)
 	uint8_t group4 = 0;                     // Opcode prefix in 4th group, 0 if none. 4th group includes address-size override prefix (p_67)
 
-	bool    has_vex  = false;               // Has VEX prefix.
-	uint8_t vex_size = 0;                   // Size of VEX prefix (usually 2 or 3 bytes).
-	uint8_t vex_reg  = 0;                   // VEX register specifier.
-	bool    vex_r    = 0;                   // R field.
-	bool    vex_x    = 0;                   // X field.
-	bool    vex_b    = 0;                   // B field.
-	bool    vex_w    = 0;                   // W field.
-	uint8_t vex_l    = 0;                   // L field.
+	bool    has_vex   = false;              // Has VEX prefix.
+	bool    vex_merge = false;              // Merge mode specifier; z field.
+	uint8_t vex_size  = 0;                  // Size of VEX prefix (usually 2 or 3 bytes).
+	uint8_t vex_reg   = 0;                  // VEX register specifier.
+	/* VEX.W, VEX.R, VEX.X, VEX.B have no effect in 32 bit mode */
+	uint8_t vex_l     = 0;                  // VEX L field.
 
 	uint8_t opcode1 = 0;                    // 1st opcode byte.
 	uint8_t opcode2 = 0;                    // 2nd opcode byte.

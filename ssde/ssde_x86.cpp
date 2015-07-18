@@ -166,13 +166,10 @@ void ssde_x86::reset_fields()
 	opcode2 = 0;
 	opcode3 = 0;
 
-	has_vex = false;
-	vex_reg = 0;
-	vex_r   = false;
-	vex_x   = false;
-	vex_b   = false;
-	vex_w   = false;
-	vex_l   = 0;
+	has_vex   = false;
+	vex_merge = false;
+	vex_reg   = 0;
+	vex_l     = 0;
 }
 
 bool ssde_x86::dec()
@@ -256,7 +253,7 @@ bool ssde_x86::dec()
 	if ((static_cast<uint8_t>(buffer[ip + length]) == 0xc4 ||
 	     static_cast<uint8_t>(buffer[ip + length]) == 0xc5 ||
 	     static_cast<uint8_t>(buffer[ip + length]) == 0x62) &&
-	    buffer[ip + length+1] & 0x80)
+	    (buffer[ip + length+1] & 0xc0) == 0xc0)
 		/* looks like we've found a VEX prefix */
 	{
 		has_vex = true;
@@ -282,6 +279,7 @@ bool ssde_x86::dec()
 			// TODO(notnanocat): implement
 		}
 		else
+			/* 2 or 3 byte VEX */
 		{
 			if (prefix == 0xc4)
 				/* this is a 3 byte VEX */
@@ -291,82 +289,56 @@ bool ssde_x86::dec()
 
 				uint8_t vex_1 = buffer[ip + length++];
 
-				vex_r = vex_1 & 0x80 ? true : false;
-				vex_x = vex_1 & 0x40 ? true : false;
-				vex_b = vex_1 & 0x20 ? true : false;
-
 				switch (vex_1 & 0x1f)
-					/* decode first one or two opcode bytes */
+					/* decode first one or two opcode bytes m-mmmm */
 				{
 				case 0x01:
-					{
-						opcode1 = 0x0f;
-					}
+					opcode1 = 0x0f;
 					break;
 
 				case 0x02:
-					{
-						opcode1 = 0x0f;
-						opcode2 = 0x38;
-					}
+					opcode1 = 0x0f;
+					opcode2 = 0x38;
 					break;
 
 				case 0x03:
-					{
-						opcode1 = 0x0f;
-						opcode2 = 0x3a;
-					}
+					opcode1 = 0x0f;
+					opcode2 = 0x3a;
 					break;
 
 				default:
-					{
-						error = true;
-						error_opcode = true;
-					}
+					error = true;
+					error_opcode = true;
 					break;
 				}
 			}
 			else
 			{
 				vex_size = 2;
-
-				opcode1 = 0x0f;
+				opcode1  = 0x0f;
 			}
 
 
 			uint8_t vex_2 = buffer[ip + length++];
 
-			if (prefix == 0xc4)
-			{
-				vex_w = vex_2 & 0x80 ? true : false;
-			}
-			else
-			{
-				vex_r = vex_2 & 0x80 ? true : false;
-			}
-
 			vex_l = vex_2 & 0x04 ? 1 : 0;
-			vex_reg = ~vex_2 & 0x78 >> 3;
+
+			/* decode destination register vvvv */
+			vex_reg = ~vex_2 & (0x0f << 3) >> 3;
 
 			switch (vex_2 & 0x02)
-				/* decode prefix */
+				/* decode prefix pp */
 			{
 			case 0x01:
-				{
-					group3 = p_66;
-				}
+				group3 = p_66;
 				break;
 
 			case 0x02:
-				{
-					group1 = p_repz;
-				}
+				group1 = p_repz;
 				break;
 
 			case 0x03:
-				{
-					group1 = p_repnz;
-				}
+				group1 = p_repnz;
 				break;
 
 			default:
@@ -455,9 +427,7 @@ bool ssde_x86::dec()
 			break;
 
 		default:
-			{
-				flags = rm;
-			}
+			flags = rm;
 			break;
 		}
 	}
@@ -646,15 +616,11 @@ bool ssde_x86::dec()
 				switch (rel_size)
 				{
 				case 1:
-					{
-						rel |= 0xffffff00;
-					}
+					rel |= 0xffffff00;
 					break;
 
 				case 2:
-					{
-						rel |= 0xffff0000;
-					}
+					rel |= 0xffff0000;
 					break;
 
 				default:
