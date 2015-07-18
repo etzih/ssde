@@ -24,4 +24,4 @@ Check *example/* to see how SSDE can be used.
 	|                   |                  |       |
 	| Core i3 2350m     | Windows 8.1 x64  | 64 LE |
 	| ARMv6 processor   | Raspbian 7       | 32 LE |
-	|___________________|_________________ |_______|
+	|___________________|__________________|_______|
