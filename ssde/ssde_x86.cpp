@@ -138,6 +138,87 @@ static const uint16_t op_table_3a[256] =
 };
 
 
+bool ssde_x86::dec()
+{
+	if (ip_overflow)
+		return false;
+
+	if (ip >= buffer.length())
+	{
+		if (ip > buffer.length())
+			ip_overflow = true;
+
+		return false;
+	}
+
+
+	reset_fields();
+
+	decode_prefixes();
+	decode_opcode();
+
+	if (flags != ::error)
+		/* it's not a bullshit instruction */
+	{
+		if (flags & ::mp && group3 != p_66)
+			/* this instruction lacks mandatory 66 prefix */
+		{
+			error = true;
+			error_opcode = true;
+		}
+
+		if (flags & ::rm)
+			/* this instruction has a Mod byte, decode it */
+		{
+			decode_modrm();
+
+			if (has_sib)
+				/* if instruction has a SIB byte, decode it, too */
+			{
+				decode_sib();
+			}
+
+			if (has_disp)
+				/* if instruction has displacement value, read it */
+			{
+				disp = 0;
+
+				for (unsigned int i = 0; i < disp_size; i++)
+					disp |= buffer[ip + length++] << i*8;
+			}
+		}
+		else if (group1 == p_lock)
+			/* LOCK prefix only makes sense for Mod M */
+		{
+			error = true;
+			error_lock = true;
+		}
+
+		/* decode moffs, imm or rel */
+		decode_imm();
+
+
+		if (length > 15)
+			/* CPU can't handle instructions longer than 15 bytes */
+		{
+			length = 15;
+
+			error = true;
+			error_length = true;
+		}
+	}
+	else
+	{
+		error = true;
+		error_opcode = true;
+
+		length = 1;
+	}
+
+	return true;
+}
+
+/* -- resets fields before new iteration of the instruction decoder -------- */
 void ssde_x86::reset_fields()
 {
 	length = 0;
@@ -170,24 +251,14 @@ void ssde_x86::reset_fields()
 	vex_merge = false;
 	vex_reg   = 0;
 	vex_l     = 0;
+
+
+	flags = ::error;
 }
 
-bool ssde_x86::dec()
+/* -- decode legacy prefixes the same way CPU does ------------------------- */
+void ssde_x86::decode_prefixes()
 {
-	if (ip_overflow)
-		return false;
-
-	if (ip >= buffer.length())
-	{
-		if (ip > buffer.length())
-			ip_overflow = true;
-
-		return false;
-	}
-
-
-	reset_fields();
-
 	for (unsigned int x = 0; x < 14; ++x, ++length)
 		/*
 		* This is prefix analyzer. It behaves exactly the
@@ -205,8 +276,8 @@ bool ssde_x86::dec()
 
 		/* 1st group */
 		if (prefix == p_lock  ||
-		    prefix == p_repnz ||
-		    prefix == p_repz)
+			prefix == p_repnz ||
+			prefix == p_repz)
 		{
 			if (group1 == p_none)
 				group1 = prefix;
@@ -216,8 +287,8 @@ bool ssde_x86::dec()
 
 		/* 2nd group */
 		if (prefix == p_seg_cs || prefix == p_seg_ss ||
-		    prefix == p_seg_ds || prefix == p_seg_es ||
-		    prefix == p_seg_fs || prefix == p_seg_gs
+			prefix == p_seg_ds || prefix == p_seg_es ||
+			prefix == p_seg_fs || prefix == p_seg_gs
 			/* p_branch_not_taken, p_branch_taken, */)
 		{
 			if (group2 == p_none)
@@ -246,10 +317,11 @@ bool ssde_x86::dec()
 
 		break;
 	}
+}
 
-	
-	uint16_t flags = ::error;
-
+/* -- read opcode bytes or decode them from VEX ---------------------------- */
+void ssde_x86::decode_opcode()
+{
 	if ((static_cast<uint8_t>(buffer[ip + length]) == 0xc4 ||
 	     static_cast<uint8_t>(buffer[ip + length]) == 0xc5 ||
 	     static_cast<uint8_t>(buffer[ip + length]) == 0x62) &&
@@ -259,9 +331,9 @@ bool ssde_x86::dec()
 		has_vex = true;
 
 		if (group1 != 0 ||
-		    group2 != 0 ||
-		    group3 != 0 ||
-		    group4 != 0)
+			group2 != 0 ||
+			group3 != 0 ||
+			group4 != 0)
 			/* VEX-encoded instructions are not allowed to be preceeded by legacy prefixes */
 		{
 			error = true;
@@ -288,31 +360,10 @@ bool ssde_x86::dec()
 
 
 				uint8_t vex_1 = buffer[ip + length++];
-
-				switch (vex_1 & 0x1f)
-					/* decode first one or two opcode bytes m-mmmm */
-				{
-				case 0x01:
-					opcode1 = 0x0f;
-					break;
-
-				case 0x02:
-					opcode1 = 0x0f;
-					opcode2 = 0x38;
-					break;
-
-				case 0x03:
-					opcode1 = 0x0f;
-					opcode2 = 0x3a;
-					break;
-
-				default:
-					error = true;
-					error_opcode = true;
-					break;
-				}
+				vex_decode_mm(vex_1 & 0x1f);
 			}
 			else
+				/* this is a 2 byte VEX */
 			{
 				vex_size = 2;
 				opcode1  = 0x0f;
@@ -323,46 +374,10 @@ bool ssde_x86::dec()
 
 			vex_l = vex_2 & 0x04 ? 1 : 0;
 
-			/* decode destination register vvvv */
-			vex_reg = ~vex_2 & (0x0f << 3) >> 3;
+			/* determine destination register from vvvv */
+			vex_reg = (~vex_2 >> 3) & 0x0f;
 
-			switch (vex_2 & 0x02)
-				/* decode prefix pp */
-			{
-			case 0x01:
-				group3 = p_66;
-				break;
-
-			case 0x02:
-				group1 = p_repz;
-				break;
-
-			case 0x03:
-				group1 = p_repnz;
-				break;
-
-			default:
-				break;
-			}
-		}
-
-		if (opcode1 == 0x0f)
-		{
-			if (opcode2 == 0x38)
-			{
-				opcode3 = buffer[ip + length++];
-				flags   = op_table_38[opcode3];
-			}
-			else if (opcode2 == 0x3a)
-			{
-				opcode3 = buffer[ip + length++];
-				flags   = op_table_3a[opcode3];
-			}
-			else
-			{
-				opcode2 = buffer[ip + length++];
-				flags   = op_table_0f[opcode2];
-			}
+			vex_decode_pp(vex_2 & 0x03);
 		}
 	}
 	else
@@ -373,34 +388,41 @@ bool ssde_x86::dec()
 		if (opcode1 == 0x0f)
 		{
 			opcode2 = buffer[ip + length++];
-
-			if (opcode2 == 0x38)
-			{
-				opcode3 = buffer[ip + length++];
-				flags   = op_table_38[opcode3];
-			}
-			else if (opcode2 == 0x3a)
-			{
-				opcode3 = buffer[ip + length++];
-				flags   = op_table_3a[opcode3];
-			}
-			else
-			{
-				flags = op_table_0f[opcode2];
-			}
 		}
 		else
 			/* this is a regular single opcode instruction */
 		{
 			flags = op_table[opcode1];
 		}
+	}
 
-		if (flags & ::vx)
-			/* this instruction can only be VEX-encoded */
+	if (opcode1 == 0x0f)
+		/* decode 2nd or 3rd opcode byte */
+	{
+		switch (opcode2)
 		{
-			error = true;
-			error_novex = true;
+		case 0x38:
+			opcode3 = buffer[ip + length++];
+			flags   = op_table_38[opcode3];
+			break;
+
+		case 0x3a:
+			opcode3 = buffer[ip + length++];
+			flags   = op_table_3a[opcode3];
+			break;
+
+		default:
+			opcode2 = buffer[ip + length++];
+			flags   = opcode2;
+			break;
 		}
+	}
+
+	if (flags & ::vx && !has_vex)
+		/* this instruction can only be VEX-encoded */
+	{
+		error = true;
+		error_novex = true;
 	}
 
 	if (opcode1 == 0xf6 || opcode1 == 0xf7)
@@ -431,225 +453,234 @@ bool ssde_x86::dec()
 			break;
 		}
 	}
+}
 
-	if (flags != ::error)
-		/* it's not a bullshit instruction */
+/* -- decodes a Mod R/M byte ----------------------------------------------- */
+void ssde_x86::decode_modrm()
+{
+	// TODO(notnanocat): implement REX Mod R/M extensions
+
+	uint8_t modrm_byte = buffer[ip + length++];
+
+	has_modrm = true;
+	modrm_mod = modrm_byte >> 6 & 0x03;
+	modrm_reg = modrm_byte >> 3 & 0x07;
+	modrm_rm  = modrm_byte      & 0x07;
+
+	switch (modrm_mod)
 	{
-		if (flags & ::mp && group3 != p_66)
-			/* this instruction lacks mandatory 66 prefix */
+	case 0x00:
+		if (group4 == p_67)
+		{
+			if (modrm_rm == 0x06)
+			{
+				has_disp  = true;
+				disp_size = 2;
+			}
+		}
+		else
+		{
+			if (modrm_rm == 0x04)
+				has_sib = true;
+
+			if (modrm_rm == 0x05)
+			{
+				has_disp  = true;
+				disp_size = 4;
+			}
+		}
+		break;
+
+	case 0x01:
+		{
+			if (group4 != p_67 && modrm_rm == 0x04)
+				has_sib = true;
+
+			has_disp  = true;
+			disp_size = 1;
+		}
+		break;
+
+	case 0x02:
+		{
+			if (group4 != p_67 && modrm_rm == 0x04)
+				has_sib = true;
+
+			has_disp  = true;
+			disp_size = group4 != p_67 ? 4 : 2;
+		}
+		break;
+
+	case 0x03:
+		if (group1 == p_lock)
+			/* LOCK prefix is not allowed to be used with Mod R */
 		{
 			error = true;
-			error_opcode = true;
+			error_lock = true;
+		}
+		break;
+
+	default:
+		break;
+	}
+}
+
+/* -- decodes SIB byte ----------------------------------------------------- */
+void ssde_x86::decode_sib()
+{
+	uint8_t sib_byte = buffer[ip + length++];
+
+	sib_scale = 1 << (sib_byte >> 6 & 0x03);
+	sib_index = sib_byte >> 3 & 0x07;
+	sib_base  = sib_byte      & 0x07;
+
+	if (sib_index == 0x04)
+		/* index register can't be SP */
+	{
+		error = true;
+		error_opcode = true;
+	}
+}
+
+/* -- decodes a moffs, imm or rel operand ---------------------------------- */
+void ssde_x86::decode_imm()
+{
+	if (flags & ::am)
+		/* address mode instructions behave a little differently */
+	{
+		has_imm  = true;
+		imm_size = group4 != p_67 ? 4 : 2;
+	}
+	else
+	{
+		if (flags & ::i32)
+		{
+			has_imm  = true;
+			imm_size = group3 != p_66 ? 4 : 2;
 		}
 
-		if (flags & ::rm)
-			/* this instruction has a Mod byte, decode it */
+		if (flags & ::i16)
 		{
-			uint8_t modrm_byte = buffer[ip + length++];
-
-			has_modrm = true;
-			modrm_mod = modrm_byte >> 6 & 0x03;
-			modrm_reg = modrm_byte >> 3 & 0x07;
-			modrm_rm  = modrm_byte      & 0x07;
-
-			switch (modrm_mod)
+			if (has_imm)
 			{
-			case 0x00:
-				if (group4 == p_67)
-				{
-					if (modrm_rm == 0x06)
-					{
-						has_disp  = true;
-						disp_size = 2;
-					}
-				}
-				else
-				{
-					if (modrm_rm == 0x04)
-						has_sib = true;
+				has_imm2  = true;
+				imm2_size = 2;
+			}
+			else
+			{
+				has_imm  = true;
+				imm_size = 2;
+			}
+		}
 
-					if (modrm_rm == 0x05)
-					{
-						has_disp  = true;
-						disp_size = 4;
-					}
-				}
+		if (flags & ::i8)
+		{
+			if (has_imm)
+			{
+				has_imm2  = true;
+				imm2_size = 1;
+			}
+			else
+			{
+				has_imm  = true;
+				imm_size = 1;
+			}
+		}
+	}
+
+	if (has_imm)
+	{
+		imm = 0;
+
+		for (unsigned int i = 0; i < imm_size; ++i)
+			imm |= buffer[ip + length++] << i*8;
+
+
+		if (has_imm2)
+		{
+			imm2 = 0;
+
+			for (unsigned int i = 0; i < imm2_size; ++i)
+				imm2 |= buffer[ip + length++] << i*8;
+		}
+	}
+
+	if (flags & ::rel)
+		/* this instruction has relative address, move imm to rel */
+	{
+		has_imm = false;
+
+		rel_size = imm_size;
+		rel = imm;
+
+		if (rel & (1 << (rel_size*8 - 1)))
+			/* rel is signed, extend the sign if needed */
+		{
+			switch (rel_size)
+			{
+			case 1:
+				rel |= 0xffffff00;
 				break;
 
-			case 0x01:
-				{
-					if (group4 != p_67 && modrm_rm == 0x04)
-						has_sib = true;
-
-					has_disp  = true;
-					disp_size = 1;
-				}
-				break;
-
-			case 0x02:
-				{
-					if (group4 != p_67 && modrm_rm == 0x04)
-						has_sib = true;
-
-					has_disp  = true;
-					disp_size = group4 == p_67 ? 2 : 4;
-				}
-				break;
-
-			case 0x03:
-				if (group1 == p_lock)
-					/* LOCK prefix is not allowed to be used with Mod R */
-				{
-					error = true;
-					error_lock = true;
-				}
+			case 2:
+				rel |= 0xffff0000;
 				break;
 
 			default:
 				break;
 			}
-
-			if (has_sib)
-				/* if instruction has a SIB byte, decode it, too */
-			{
-				uint8_t sib_byte = buffer[ip + length++];
-
-				sib_scale = 1 << (sib_byte >> 6 & 0x03);
-				sib_index = sib_byte >> 3 & 0x07;
-				sib_base  = sib_byte      & 0x07;
-
-				if (sib_index == 0x04)
-					/* index register can't be ESP */
-				{
-					error = true;
-					error_opcode = true;
-				}
-			}
-
-			if (has_disp)
-			{
-				disp = 0;
-
-				for (unsigned int i = 0; i < disp_size; i++)
-					disp |= buffer[ip + length++] << i*8;
-			}
-		}
-		else if (group1 == p_lock)
-			/* LOCK prefix only makes sense for Mod M */
-		{
-			error = true;
-			error_lock = true;
 		}
 
+		abs = ip + length + rel;
 
-		if (flags & ::am)
-			/* address mode instructions behave a little differently */
-		{
-			has_imm  = true;
-			imm_size = group4 != p_67 ? 4 : 2;
-		}
-		else
-		{
-			if (flags & ::i32)
-			{
-				has_imm  = true;
-				imm_size = group3 != p_66 ? 4 : 2;
-			}
-
-			if (flags & ::i16)
-			{
-				if (has_imm)
-				{
-					has_imm2  = true;
-					imm2_size = 2;
-				}
-				else
-				{
-					has_imm  = true;
-					imm_size = 2;
-				}
-			}
-
-			if (flags & ::i8)
-			{
-				if (has_imm)
-				{
-					has_imm2  = true;
-					imm2_size = 1;
-				}
-				else
-				{
-					has_imm  = true;
-					imm_size = 1;
-				}
-			}
-		}
-
-		if (has_imm)
-		{
-			imm = 0;
-
-			for (unsigned int i = 0; i < imm_size; ++i)
-				imm |= buffer[ip + length++] << i*8;
-
-
-			if (has_imm2)
-			{
-				imm2 = 0;
-
-				for (unsigned int i = 0; i < imm2_size; ++i)
-					imm2 |= buffer[ip + length++] << i*8;
-			}
-		}
-
-		if (flags & ::rel)
-			/* this instruction has relative address, move imm to rel */
-		{
-			has_imm = false;
-
-			rel_size = imm_size;
-			rel = imm;
-
-			if (rel & (1 << (rel_size*8 - 1)))
-				/* rel is signed, extend the sign if needed */
-			{
-				switch (rel_size)
-				{
-				case 1:
-					rel |= 0xffffff00;
-					break;
-
-				case 2:
-					rel |= 0xffff0000;
-					break;
-
-				default:
-					break;
-				}
-			}
-
-			abs = ip + length + rel;
-
-			has_rel = true;
-		}
-
-
-		if (length > 15)
-			/* CPU can't handle instructions longer than 15 bytes */
-		{
-			length = 15;
-
-			error = true;
-			error_length = true;
-		}
+		has_rel = true;
 	}
-	else
+}
+
+/* -- decode SIMD prefix from pp field of VEX ------------------------------ */
+void ssde_x86::vex_decode_pp(uint8_t pp)
+{
+	switch (pp)
 	{
+	case 0x01:
+		group3 = p_66;
+		break;
+
+	case 0x02:
+		group1 = p_repz;
+		break;
+
+	case 0x03:
+		group1 = p_repnz;
+		break;
+
+	default:
+		break;
+	}
+}
+
+/* -- determine opcode bytes from mm field of VEX -------------------------- */
+void ssde_x86::vex_decode_mm(uint8_t mm)
+{
+	switch (mm)
+	{
+	case 0x01:
+		opcode1 = 0x0f;
+		break;
+
+	case 0x02:
+		opcode1 = 0x0f;
+		opcode2 = 0x38;
+		break;
+
+	case 0x03:
+		opcode1 = 0x0f;
+		opcode2 = 0x3a;
+		break;
+
+	default:
 		error = true;
 		error_opcode = true;
-
-		length = 1;
+		break;
 	}
-
-	return true;
 }

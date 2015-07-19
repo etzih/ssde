@@ -44,6 +44,15 @@ public:
 private:
 	void reset_fields();
 
+	void decode_prefixes();
+	void decode_opcode();
+	void decode_modrm();
+	void decode_sib();
+	void decode_imm();
+
+	void vex_decode_pp(uint8_t pp);
+	void vex_decode_mm(uint8_t mm);
+
 public:
 	bool error_lock = false;                // LOCK prefix is not allowed.
 	bool error_novex = false;               // Instruction is only allowed to be VEX encoded.
@@ -90,4 +99,7 @@ public:
 	unsigned int rel_size = 0;              // Size of relative address, in bytes.
 	int32_t      rel      = 0;              // Relative address value.
 	uint32_t     abs      = 0;              // Absolute address value.
+
+private:
+	uint16_t flags;
 };
