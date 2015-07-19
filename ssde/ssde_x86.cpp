@@ -276,8 +276,8 @@ void ssde_x86::decode_prefixes()
 
 		/* 1st group */
 		if (prefix == p_lock  ||
-			prefix == p_repnz ||
-			prefix == p_repz)
+		    prefix == p_repnz ||
+		    prefix == p_repz)
 		{
 			if (group1 == p_none)
 				group1 = prefix;
@@ -287,8 +287,8 @@ void ssde_x86::decode_prefixes()
 
 		/* 2nd group */
 		if (prefix == p_seg_cs || prefix == p_seg_ss ||
-			prefix == p_seg_ds || prefix == p_seg_es ||
-			prefix == p_seg_fs || prefix == p_seg_gs
+		    prefix == p_seg_ds || prefix == p_seg_es ||
+		    prefix == p_seg_fs || prefix == p_seg_gs
 			/* p_branch_not_taken, p_branch_taken, */)
 		{
 			if (group2 == p_none)
@@ -331,9 +331,9 @@ void ssde_x86::decode_opcode()
 		has_vex = true;
 
 		if (group1 != 0 ||
-			group2 != 0 ||
-			group3 != 0 ||
-			group4 != 0)
+		    group2 != 0 ||
+		    group3 != 0 ||
+		    group4 != 0)
 			/* VEX-encoded instructions are not allowed to be preceeded by legacy prefixes */
 		{
 			error = true;
