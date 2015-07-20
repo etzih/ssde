@@ -85,11 +85,12 @@ public:
 
 	bool    has_rex = false;                // Has REX prefix;
 
-	bool    has_vex   = false;              // Has VEX prefix.
-	bool    vex_merge = false;              // Merge mode specifier; z field.
-	uint8_t vex_size  = 0;                  // Size of VEX prefix (usually 2 or 3 bytes).
-	uint8_t vex_reg   = 0;                  // VEX register specifier.
-	uint8_t vex_l     = 0;                  // VEX L field.
+	bool    has_vex    = false;             // Has VEX prefix.
+	bool    vex_zero   = false;             // Should zero or merge?; z field.
+	uint8_t vex_size   = 0;                 // Size of VEX prefix (usually 2 or 3 bytes).
+	uint8_t vex_reg    = 0;                 // VEX register specifier.
+	uint8_t vex_opmask = 0;                 // VEX opmask register specifier.
+	uint8_t vex_l      = 0;                 // VEX L field.
 
 	uint8_t opcode1 = 0;                    // 1st opcode byte.
 	uint8_t opcode2 = 0;                    // 2nd opcode byte.
@@ -105,21 +106,21 @@ public:
 	uint8_t sib_index = 0;                  // Index register.
 	uint8_t sib_base  = 0;                  // Base register.
 
-	bool         has_disp  = false;         // Has address displacement.
-	unsigned int disp_size = 0;             // Size of address displacement, in bytes.
-	int32_t      disp      = 0;             // Displacement value.
+	bool    has_disp  = false;              // Has address displacement.
+	int     disp_size = 0;                  // Size of address displacement, in bytes.
+	int32_t disp      = 0;                  // Displacement value.
 
-	bool         has_imm   = false;         // Has immediate value.
-	bool         has_imm2  = false;         // Has 2 immediate values.
-	unsigned int imm_size  = 0;             // Size of the first immediate value, in bytes.
-	unsigned int imm2_size = 0;             // Size of the second immediate value, in bytes.
-	uint64_t     imm       = 0;             // First immediate value.
-	uint64_t     imm2      = 0;             // Second immediate value.
+	bool     has_imm   = false;             // Has immediate value.
+	bool     has_imm2  = false;             // Has 2 immediate values.
+	int      imm_size  = 0;                 // Size of the first immediate value, in bytes.
+	int      imm2_size = 0;                 // Size of the second immediate value, in bytes.
+	uint64_t imm       = 0;                 // First immediate value.
+	uint64_t imm2      = 0;                 // Second immediate value.
 
-	bool         has_rel  = false;          // Has relative address.
-	unsigned int rel_size = 0;              // Size of relative address, in bytes.
-	int32_t      rel      = 0;              // Relative address value.
-	uint64_t     abs      = 0;              // Absolute address value.
+	bool     has_rel  = false;              // Has relative address.
+	int      rel_size = 0;                  // Size of relative address, in bytes.
+	int32_t  rel      = 0;                  // Relative address value.
+	uint64_t abs      = 0;                  // Absolute address value.
 
 private:
 	uint16_t flags;

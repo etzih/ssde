@@ -241,11 +241,11 @@ bool ssde_x64::dec()
 			{
 				disp = 0;
 
-				for (unsigned int i = 0; i < disp_size; i++)
+				for (int i = 0; i < disp_size; i++)
 					disp |= buffer[ip + length++] << i*8;
 
 				if (disp & (1 << (disp_size*8 - 1)))
-					/* rel is signed, extend the sign if needed */
+					/* disp is signed, extend the sign if needed */
 				{
 					switch (disp_size)
 					{
@@ -351,10 +351,11 @@ void ssde_x64::reset_fields()
 	rex_x   = false;
 	rex_b   = false;
 
-	has_vex   = false;
-	vex_merge = false;
-	vex_reg   = 0;
-	vex_l     = 0;
+	has_vex    = false;
+	vex_zero   = false;
+	vex_reg    = 0;
+	vex_opmask = 0;
+	vex_l      = 0;
 
 
 	flags = ::error;
@@ -363,7 +364,7 @@ void ssde_x64::reset_fields()
 /* -- decode legacy prefixes + REX the same way CPU does ------------------- */
 void ssde_x64::decode_prefixes()
 {
-	for (unsigned int x = 0; x < 14; ++x, ++length)
+	for (int x = 0; x < 14; ++x, ++length)
 		/*
 		* This is prefix analyzer. It behaves exactly the
 		* same way real CPUs analyze instructions for
@@ -489,6 +490,7 @@ void ssde_x64::decode_opcode()
 			/* this is a 4 byte VEX */
 		{
 			vex_size = 4;
+
 
 			// TODO(notnanocat): implement
 		}
@@ -739,7 +741,7 @@ void ssde_x64::decode_imm()
 	{
 		imm = 0;
 
-		for (unsigned int i = 0; i < imm_size; ++i)
+		for (int i = 0; i < imm_size; ++i)
 			imm |= buffer[ip + length++] << i*8;
 
 
@@ -747,7 +749,7 @@ void ssde_x64::decode_imm()
 		{
 			imm2 = 0;
 
-			for (unsigned int i = 0; i < imm2_size; ++i)
+			for (int i = 0; i < imm2_size; ++i)
 				imm2 |= buffer[ip + length++] << i*8;
 		}
 	}
