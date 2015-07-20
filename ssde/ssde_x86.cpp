@@ -458,8 +458,6 @@ void ssde_x86::decode_opcode()
 /* -- decodes a Mod R/M byte ----------------------------------------------- */
 void ssde_x86::decode_modrm()
 {
-	// TODO(notnanocat): implement REX Mod R/M extensions
-
 	uint8_t modrm_byte = buffer[ip + length++];
 
 	has_modrm = true;
