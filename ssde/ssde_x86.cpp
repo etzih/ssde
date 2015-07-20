@@ -604,13 +604,6 @@ void ssde_x86::decode_sib()
 	sib_scale = 1 << (sib_byte >> 6 & 0x03);
 	sib_index = sib_byte >> 3 & 0x07;
 	sib_base  = sib_byte      & 0x07;
-
-	if (sib_index == 0x04)
-		/* index register can't be SP */
-	{
-		error = true;
-		error_opcode = true;
-	}
 }
 
 /* -- decodes a moffs, imm or rel operand ---------------------------------- */
