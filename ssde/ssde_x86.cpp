@@ -43,23 +43,39 @@ enum : uint16_t
 /* 1st opcode flag table */
 static const uint16_t op_table[256] =
 {
-	/*x0  |  x1  |  x2  |  x3  |  x4  |  x5  |  x6  |  x7  |  x8  |  x9  |  xA  |  xB  |  xC  |  xD  |  xE  |  xF */
-	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , none , none ,  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , none , error, /* 0x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , none , none ,  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , none , none , /* 1x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, none ,  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, none , /* 2x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, none ,  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, none , /* 3x */
-	 none , none , none , none , none , none , none , none , none , none , none , none , none , none , none , none , /* 4x */
-	 none , none , none , none , none , none , none , none , none , none , none , none , none , none , none , none , /* 5x */
-	 none , none ,  rm  ,  rm  , error, error, error, error,  i32 ,rm|i32,  i8  , rm|i8, none , none , none , none , /* 6x */
-	  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  , /* 7x */
-	 rm|i8,rm|i32, rm|i8, rm|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 8x */
-	 none , none , none , none , none , none , none , none , none , none,i32|i16, error, none , none , none , none , /* 9x */
-	  am  ,  am  ,  am  ,  am  , none , none , none , none ,  i8  ,  i32 , none , none , none , none , none , none , /* Ax */
-	  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 , /* Bx */
-	 rm|i8, rm|i8,  i16 , none ,  rm  ,  rm  , rm|i8,rm|i32,i16|i8, none ,  i16 , none , none ,  i8  , none , none , /* Cx */
-	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i8  , none , none ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Dx */
-	  r8  ,  r8  ,  r8  ,  r8  ,  i8  ,  i8  ,  i8  ,  i8  ,  r32 ,  r32,i32|i16,  r8  , none , none , none , none , /* Ex */
-	 error, none , error, error, none , none , error, error, none , none , none , none , none , none ,  rm  ,  rm  , /* Fx */
+	/*x0  |  x1  |  x2  |  x3  |  x4  |  x5  |  x6  |  x7*/
+	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , none , none , /* 00x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , none , error, /* 01x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , none , none , /* 02x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , none , none , /* 03x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, none , /* 04x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, none , /* 05x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, none , /* 06x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i32 , error, none , /* 07x */
+	 none , none , none , none , none , none , none , none , /* 10x */
+	 none , none , none , none , none , none , none , none , /* 11x */
+	 none , none , none , none , none , none , none , none , /* 12x */
+	 none , none , none , none , none , none , none , none , /* 13x */
+	 none , none ,  rm  ,  rm  , error, error, error, error, /* 14x */
+	  i32 ,rm|i32,  i8  , rm|i8, none , none , none , none , /* 15x */
+	  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  , /* 16x */
+	  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  ,  r8  , /* 17x */
+	 rm|i8,rm|i32, rm|i8, rm|i8,  rm  ,  rm  ,  rm  ,  rm  , /* 20x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 21x */
+	 none , none , none , none , none , none , none , none , /* 22x */
+	 none , none,i32|i16, error, none , none , none , none , /* 23x */
+	  am  ,  am  ,  am  ,  am  , none , none , none , none , /* 24x */
+	  i8  ,  i32 , none , none , none , none , none , none , /* 25x */
+	  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  ,  i8  , /* 26x */
+	  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 ,  i32 , /* 27x */
+	 rm|i8, rm|i8,  i16 , none ,  rm  ,  rm  , rm|i8,rm|i32, /* 30x */
+	i16|i8, none ,  i16 , none , none ,  i8  , none , none , /* 31x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  i8  ,  i8  , none , none , /* 32x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 33x */
+	  r8  ,  r8  ,  r8  ,  r8  ,  i8  ,  i8  ,  i8  ,  i8  , /* 34x */
+	  r32 ,  r32,i32|i16,  r8  , none , none , none , none , /* 35x */
+	 error, none , error, error, none , none , error, error, /* 36x */
+	 none , none , none , none , none , none ,  rm  ,  rm  , /* 37x */
 };
 
 /*
@@ -68,23 +84,39 @@ static const uint16_t op_table[256] =
 */
 static const uint16_t op_table_0f[256] =
 {
-	/*x0  |  x1  |  x2  |  x3  |  x4  |  x5  |  x6  |  x7  |  x8  |  x9  |  xA  |  xB  |  xC  |  xD  |  xE  |  xF */
-	  rm  ,  rm  ,  rm  ,  rm  , error, error, none , error, none , none , error, none , error,  rm  , none , error, /* 0x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 1x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  , error,  rm  , error,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 2x */
-	 none , none , none , none , none , none , error, none , error, error, error, error, error, error, error, error, /* 3x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 4x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 5x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 6x */
-	 rm|i8, rm|i8, rm|i8, rm|i8,  rm  ,  rm  ,  rm  , none ,  rm  ,  rm  , error, error,  rm  ,  rm  ,  rm  ,  rm  , /* 7x */
-	  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 , /* 8x */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 9x */
-	 none , none , none ,  rm  , rm|i8,  rm  , error, error, none , none , none ,  rm  , rm|i8,  rm  ,  rm  ,  rm  , /* Ax */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , none , rm|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Bx */
-	  rm  ,  rm  , rm|i8,  rm  , rm|i8, rm|i8, rm|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Cx */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Dx */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Ex */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Fx */
+	/*x0  |  x1  |  x2  |  x3  |  x4  |  x5  |  x6  |  x7*/
+	  rm  ,  rm  ,  rm  ,  rm  , error, error, none , error, /* 00x */
+	 none , none , error, none , error,  rm  , none , error, /* 01x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 02x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 03x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  , error,  rm  , error, /* 04x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 05x */
+	 none , none , none , none , none , none , error, none , /* 06x */
+	 error, error, error, error, error, error, error, error, /* 07x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 10x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 11x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 12x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 13x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 14x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 15x */
+	 rm|i8, rm|i8, rm|i8, rm|i8,  rm  ,  rm  ,  rm  , none , /* 16x */
+	  rm  ,  rm  , error, error,  rm  ,  rm  ,  rm  ,  rm  , /* 17x */
+	  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 , /* 20x */
+	  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 ,  r32 , /* 21x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 22x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 23x */
+	 none , none , none ,  rm  , rm|i8,  rm  , error, error, /* 24x */
+	 none , none , none ,  rm  , rm|i8,  rm  ,  rm  ,  rm  , /* 25x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 26x */
+	  rm  , none , rm|i8,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 27x */
+	  rm  ,  rm  , rm|i8,  rm  , rm|i8, rm|i8, rm|i8,  rm  , /* 30x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 31x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 32x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 33x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 34x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 35x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 36x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 37x */
 };
 
 /*
@@ -93,23 +125,39 @@ static const uint16_t op_table_0f[256] =
 */
 static const uint16_t op_table_38[256] =
 {
-	/*x0  |  x1  |  x2  |  x3  |  x4  |  x5  |  x6  |  x7  |  x8  |  x9  |  xA  |  xB  |  xC  |  xD  |  xE  |  xF */
-	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , vx|rm, vx|rm, error, error, /* 0x */
-	 mp|rm, error, error, error, mp|rm, mp|rm, error, mp|rm, vx|rm, error, vx|rm, error,  rm  ,  rm  ,  rm  , error, /* 1x */
-	 mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, error, error, mp|rm, mp|rm, mp|rm, mp|rm, vx|rm, vx|rm, error, error, /* 2x */
-	 mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, error, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, /* 3x */
-	 mp|rm, mp|rm, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 4x */
-	 error, error, error, error, error, error, error, error, vx|rm, vx|rm, error, error, error, error, error, error, /* 5x */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 6x */
-	 error, error, error, error, error, error, error, error, vx|rm, vx|rm, error, error, error, error, error, error, /* 7x */
-	 mp|rm, mp|rm, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* 8x */
-	 error, error, error, error, error, error, vx|rm, vx|rm, vx|rm, error, vx|rm, error, vx|rm, error, vx|rm, error, /* 9x */
-	 error, error, error, error, error, error, vx|rm, vx|rm, vx|rm, error, vx|rm, error, vx|rm, error, vx|rm, error, /* Ax */
-	 error, error, error, error, error, error, vx|rm, vx|rm, vx|rm, error, vx|rm, error, vx|rm, error, vx|rm, error, /* Bx */
-	 error, error, error, error, error, error, error, error,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , error, error, /* Cx */
-	 error, error, error, error, error, error, error, error, error, error, error,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* Dx */
-	 error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, error, /* Ex */
-	  rm  ,  rm  , error, error, error, error,  rm  , error, error, error, error, error, error, error, error, error, /* Fx */
+	/*x0  |  x1  |  x2  |  x3  |  x4  |  x5  |  x6  |  x7*/
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 00x */
+	  rm  ,  rm  ,  rm  ,  rm  , vx|rm, vx|rm, error, error, /* 01x */
+	 mp|rm, error, error, error, mp|rm, mp|rm, error, mp|rm, /* 02x */
+	 vx|rm, error, vx|rm, error,  rm  ,  rm  ,  rm  , error, /* 03x */
+	 mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, error, error, /* 04x */
+	 mp|rm, mp|rm, mp|rm, mp|rm, vx|rm, vx|rm, error, error, /* 05x */
+	 mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, error, mp|rm, /* 06x */
+	 mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, mp|rm, /* 07x */
+	 mp|rm, mp|rm, error, error, error, error, error, error, /* 10x */
+	 error, error, error, error, error, error, error, error, /* 11x */
+	 error, error, error, error, error, error, error, error, /* 12x */
+	 vx|rm, vx|rm, error, error, error, error, error, error, /* 13x */
+	 error, error, error, error, error, error, error, error, /* 14x */
+	 error, error, error, error, error, error, error, error, /* 15x */
+	 error, error, error, error, error, error, error, error, /* 16x */
+	 vx|rm, vx|rm, error, error, error, error, error, error, /* 17x */
+	 mp|rm, mp|rm, error, error, error, error, error, error, /* 20x */
+	 error, error, error, error, error, error, error, error, /* 21x */
+	 error, error, error, error, error, error, vx|rm, vx|rm, /* 22x */
+	 vx|rm, error, vx|rm, error, vx|rm, error, vx|rm, error, /* 23x */
+	 error, error, error, error, error, error, vx|rm, vx|rm, /* 24x */
+	 vx|rm, error, vx|rm, error, vx|rm, error, vx|rm, error, /* 25x */
+	 error, error, error, error, error, error, vx|rm, vx|rm, /* 26x */
+	 vx|rm, error, vx|rm, error, vx|rm, error, vx|rm, error, /* 27x */
+	 error, error, error, error, error, error, error, error, /* 30x */
+	  rm  ,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , error, error, /* 31x */
+	 error, error, error, error, error, error, error, error, /* 32x */
+	 error, error, error,  rm  ,  rm  ,  rm  ,  rm  ,  rm  , /* 33x */
+	 error, error, error, error, error, error, error, error, /* 34x */
+	 error, error, error, error, error, error, error, error, /* 35x */
+	  rm  ,  rm  , error, error, error, error,  rm  , error, /* 36x */
+	 error, error, error, error, error, error, error, error, /* 37x */
 };
 
 /*
@@ -118,23 +166,39 @@ static const uint16_t op_table_38[256] =
 */
 static const uint16_t op_table_3a[256] =
 {
-	/* x0   |   x1   |   x2   |   x3   |   x4   |   x5   |   x6   |   x7   |   x8   |   x9   |   xA   |   xB   |   xC   |   xD   |   xE   |   xF  */
-	  error ,  error ,  error ,  error ,  error ,  error ,vx|rm|i8,  error ,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,   rm   , /* 0x */
-	  error ,  error ,  error ,  error ,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,vx|rm|i8,vx|rm|i8,  error ,  error ,  error ,  error ,  error ,  error , /* 1x */
-	mp|rm|i8,mp|rm|i8,mp|rm|i8,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 2x */
-	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 3x */
-	  mp|rm ,  mp|rm ,mp|rm|i8,  error ,  error ,  error ,  error ,  error ,  error ,  error ,vx|rm|i8,vx|rm|i8,vx|rm|i8,  error ,  error ,  error , /* 4x */
-	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 5x */
-	mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,  error ,  error ,  error ,  error ,vx|rm|i8,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 6x */
-	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 7x */
-	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 8x */
-	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 9x */
-	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* Ax */
-	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* Bx */
-	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,mp|rm|i8,  error ,  error ,  error , /* Cx */
-	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* Dx */
-	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* Ex */
-	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* Fx */
+	/* x0   |   x1   |   x2   |   x3   |   x4   |   x5   |   x6   |   x7 */
+	  error ,  error ,  error ,  error ,  error ,  error ,vx|rm|i8,  error , /* 00x */
+	mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,   rm   , /* 01x */
+	  error ,  error ,  error ,  error ,mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8, /* 02x */
+	vx|rm|i8,vx|rm|i8,  error ,  error ,  error ,  error ,  error ,  error , /* 03x */
+	mp|rm|i8,mp|rm|i8,mp|rm|i8,  error ,  error ,  error ,  error ,  error , /* 04x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 05x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 06x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 07x */
+	  mp|rm ,  mp|rm ,mp|rm|i8,  error ,  error ,  error ,  error ,  error , /* 10x */
+	  error ,  error ,vx|rm|i8,vx|rm|i8,vx|rm|i8,  error ,  error ,  error , /* 11x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 12x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 13x */
+	mp|rm|i8,mp|rm|i8,mp|rm|i8,mp|rm|i8,  error ,  error ,  error ,  error , /* 14x */
+	vx|rm|i8,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 15x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 16x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 17x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 20x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 21x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 22x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 23x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 24x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 25x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 26x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 27x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 30x */
+	  error ,  error ,  error ,  error ,mp|rm|i8,  error ,  error ,  error , /* 31x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 32x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 33x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 34x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 35x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 36x */
+	  error ,  error ,  error ,  error ,  error ,  error ,  error ,  error , /* 37x */
 };
 
 
