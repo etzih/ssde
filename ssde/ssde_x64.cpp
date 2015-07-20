@@ -189,6 +189,28 @@ bool ssde_x64::dec()
 				for (unsigned int i = 0; i < disp_size; i++)
 					disp |= buffer[ip + length++] << i*8;
 			}
+
+			/* perform Mod R/M and/or SIB REX extensions */
+			if (has_sib)
+			{
+				modrm_reg |= rex_r ? 0x08 : 0;
+
+				sib_index |= rex_x ? 0x08 : 0;
+				sib_base  |= rex_b ? 0x08 : 0;
+			}
+			else
+			{
+				if (flags & ::ox)
+					/* Mod extended opcodes are extended differently */
+				{
+					modrm_reg |= rex_b ? 0x08 : 0;
+				}
+				else
+				{
+					modrm_reg |= rex_r ? 0x08 : 0;
+					modrm_rm  |= rex_b ? 0x08 : 0;
+				}
+			}
 		}
 		else if (group1 == p_lock)
 			/* LOCK prefix only makes sense for Mod M */
@@ -520,8 +542,6 @@ void ssde_x64::decode_opcode()
 /* -- decodes a Mod R/M byte ----------------------------------------------- */
 void ssde_x64::decode_modrm()
 {
-	// TODO(notnanocat): implement REX Mod R/M extensions
-
 	uint8_t modrm_byte = buffer[ip + length++];
 
 	has_modrm = true;
