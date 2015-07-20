@@ -143,17 +143,8 @@ static const uint16_t op_table_3a[256] =
 
 bool ssde_x64::dec()
 {
-	if (ip_overflow)
-		return false;
-
 	if (ip >= buffer.length())
-	{
-		if (ip > buffer.length())
-			ip_overflow = true;
-
 		return false;
-	}
-
 
 	reset_fields();
 
