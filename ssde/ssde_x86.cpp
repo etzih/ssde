@@ -240,6 +240,24 @@ bool ssde_x86::dec()
 
 				for (unsigned int i = 0; i < disp_size; i++)
 					disp |= buffer[ip + length++] << i*8;
+
+				if (disp & (1 << (disp_size*8 - 1)))
+					/* rel is signed, extend the sign if needed */
+				{
+					switch (disp_size)
+					{
+					case 1:
+						disp |= 0xffffff00;
+						break;
+
+					case 2:
+						disp |= 0xffff0000;
+						break;
+
+					default:
+						break;
+					}
+				}
 			}
 		}
 		else if (group1 == p_lock)

@@ -107,7 +107,7 @@ public:
 
 	bool         has_disp  = false;         // Has address displacement.
 	unsigned int disp_size = 0;             // Size of address displacement, in bytes.
-	uint32_t     disp      = 0;             // Displacement value.
+	int32_t      disp      = 0;             // Displacement value.
 
 	bool         has_imm   = false;         // Has immediate value.
 	bool         has_imm2  = false;         // Has 2 immediate values.
