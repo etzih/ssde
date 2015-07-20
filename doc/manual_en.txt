@@ -65,6 +65,10 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
         MMX, SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2, AVX, AVX2, FMA3
         other minor extensions (CPUID, ADX, RDSEED, RDRAND etc)
 
+  ssde_x64 supports extensions listed above just aswell, other than that
+        it supports REX prefix, Mod R/M extensions using REX, imm extension
+        using REX.W etc etc
+
 2.1 Performance and benchmarks
 
   There were no proper benchmarks performed yet, though I have done a
@@ -91,8 +95,8 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
 
 3 How to use SSDE?
 
-  SSDE was written in C++, compliant to C++11. To include SSDE into your
-  project you're required to have compiler that supports C++11.
+  SSDE is written in C++, compliant to C++11. To include SSDE into your
+  project you must have compiler that supports C++11.
 
   Each module has at least two constructors. Primary constructor and copy
   constructor. Primary constructor takes
@@ -130,13 +134,6 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
     - error_opcode  : "true" in case of an unknown opcode
     - error_operand : "true" if one of instruction operands isn't valid
     - error_length  : "true" if instruction is too long (15 max in X86)
-
-  WARNING!
-
-    In case of IP overflow (IP goes out of buffer's bounds) field
-    "ip_overflow" will be set to "true". While "ip_overflow" == true,
-    ::dec() won't do anything. You have to manually reset the field
-    before you do any analysis.
 
 3.3 Multithreading
 
