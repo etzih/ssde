@@ -330,7 +330,6 @@ void ssde_x64::reset_fields()
 	has_rex = false;
 	rex_w   = false;
 	rex_r   = false;
-	rex_rr  = false;
 	rex_x   = false;
 	rex_b   = false;
 
@@ -486,9 +485,9 @@ void ssde_x64::decode_opcode()
 
 				uint8_t vex_1 = buffer[ip + length++];
 
-				rex_r = vex_1 & 0x80 ? false : true;
-				rex_x = vex_1 & 0x40 ? false : true;
-				rex_b = vex_1 & 0x20 ? false : true;
+				vex_r = vex_1 & 0x80 ? false : true;
+				vex_x = vex_1 & 0x40 ? false : true;
+				vex_b = vex_1 & 0x20 ? false : true;
 
 				vex_decode_mm(vex_1 & 0x1f);
 			}
@@ -504,11 +503,11 @@ void ssde_x64::decode_opcode()
 
 			if (prefix == 0xc4)
 			{
-				rex_w = vex_2 & 0x80 ? true : false;
+				vex_w = vex_2 & 0x80 ? true : false;
 			}
 			else
 			{
-				rex_r = vex_2 & 0x80 ? false : true;
+				vex_r = vex_2 & 0x80 ? false : true;
 			}
 
 			vex_l = vex_2 & 0x04 ? 1 : 0;
