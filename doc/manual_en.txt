@@ -21,7 +21,6 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
   3.2 Decoding errors
   3.3 Multithreading
  4 Adding support for new architecture
- 5 Reporting an error
 
 
 
@@ -166,12 +165,3 @@ Copyright (C) 2015, Constantine Shablya. See Copyright Notice in LICENSE.txt
 
   If you plan to contribute, your code style shall be the same as style
   of project's code.
-
-5 Reporting an error
-
-  If you find some error, before you write the report you are advised to
-  make sure you're using the latest version of SSDE and that the error is
-  in SSDE algorithm and not your code. You can send the report at http://github.com/notnanocat/ssde/issues
-  Other than the report, it's recommended that you supply code which will
-  reproduce the error in SSDE. The report should describe the conditions
-  the error happens in, name of module and the method it appears in.
