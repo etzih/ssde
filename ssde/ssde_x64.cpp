@@ -356,8 +356,9 @@ void ssde_x64::reset_fields()
 	vex_reg    = 0;
 	vex_opmask = 0;
 	vex_rr     = false;
-	vex_sae    = false;
 	vex_l      = 0;
+	vex_round  = rnd_off;
+	vex_sae    = false;
 
 
 	flags = ::error;
@@ -504,20 +505,33 @@ void ssde_x64::decode_opcode()
 			vex_rr = vex_1 & 0x10 ? true : false;
 
 			vex_decode_mm(vex_1 & 0x03);
-
+			
 
 			vex_w = vex_2 & 0x80 ? true : false;
-
+			
 			/* determine destination register from vvvv */
 			vex_reg = (~vex_2 >> 3) & 0x0f | (vex_3 & 0x80 ? 0x10 : 0);
 
 			vex_decode_pp(vex_2 & 0x03);
 
 			vex_zero = vex_3 & 0x80 ? true : false;
-			vex_sae  = vex_3 & 0x10 ? true : false;
 			vex_l    = (vex_3 >> 5) & 0x03;
+			vex_sae  = vex_3 & 0x10 ? true : false;
 
 			vex_opmask = vex_3 & 0x07;
+			
+			if (vex_rc)
+				/* rounding control, implies vector is 512 bits wide */
+			{
+				vex_round = vex_l;
+				vex_l     = 0x02;
+			}
+			else if (vex_l == 0x03)
+				/* destination vector can't be wider than 512 bits */
+			{
+				error = true;
+				error_operand = true;
+			}
 		}
 		else
 			/* 2 or 3 byte VEX */

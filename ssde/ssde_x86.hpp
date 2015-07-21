@@ -37,6 +37,19 @@ public:
 		p_precision_single = 0xf3,          // Single precision scalar prefix
 	};
 
+	/*
+	* EVEX rounding modes.
+	*/
+	enum : uint8_t
+	{
+		rnd_rne = 0x00,                     //
+		rnd_rd  = 0x01,                     //
+		rnd_ru  = 0x02,                     //
+		rnd_rz  = 0x03,                     //
+
+		rnd_off = (uint8_t)-1               // 
+	};
+
 	using ssde::ssde;
 
 	bool dec() override final;
@@ -61,7 +74,7 @@ public:
 	uint8_t group2 = 0;                     // Opcode prefix in 2nd group, 0 if none. 2nd group includes segment prefixes and/or branch hints.
 	uint8_t group3 = 0;                     // Opcode prefix in 3rd group, 0 if none. 3rd group includes operand-size override prefix (p_66)
 	uint8_t group4 = 0;                     // Opcode prefix in 4th group, 0 if none. 4th group includes address-size override prefix (p_67)
-
+	
 	bool    has_vex    = false;             // Has VEX prefix.
 	bool    vex_zero   = false;             // Should zero or merge?; z field.
 	uint8_t vex_size   = 0;                 // Size of VEX prefix (usually 2 or 3 bytes).
@@ -69,6 +82,15 @@ public:
 	uint8_t vex_opmask = 0;                 // VEX opmask register specifier.
 	/* VEX.W, VEX.R, VEX.X, VEX.B have no effect in 32 bit mode */
 	uint8_t vex_l      = 0;                 // VEX L field.
+	uint8_t vex_round  = rnd_off;           // Rounding mode.
+	
+	union
+	{
+		bool vex_sae = false;               // Suppress exceptions.
+		bool vex_rc;                        // Rounding control.
+		bool vex_broadcast;                 // Broadcast single element across the destination register.
+	};
+
 
 	uint8_t opcode1 = 0;                    // 1st opcode byte.
 	uint8_t opcode2 = 0;                    // 2nd opcode byte.

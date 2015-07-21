@@ -34,6 +34,19 @@ public:
 		p_branch_taken     = 0x3e,          // Branch taken hint.
 	};
 
+	/*
+	* EVEX rounding modes.
+	*/
+	enum : uint8_t
+	{
+		rnd_rne = 0x00,                     //
+		rnd_rd  = 0x01,                     //
+		rnd_ru  = 0x02,                     //
+		rnd_rz  = 0x03,                     //
+
+		rnd_off = (uint8_t)-1               // 
+	};
+
 	using ssde::ssde;
 
 	bool dec() override final;
@@ -83,16 +96,24 @@ public:
 		bool vex_b;
 	};
 
-	bool    has_rex = false;                // Has REX prefix;
-
+	bool    has_rex = false;                // Has REX prefix.
+	
 	bool    has_vex    = false;             // Has VEX prefix.
 	bool    vex_zero   = false;             // Should zero or merge?; z field.
 	uint8_t vex_size   = 0;                 // Size of VEX prefix (usually 2 or 3 bytes).
 	uint8_t vex_reg    = 0;                 // VEX register specifier.
 	uint8_t vex_opmask = 0;                 // VEX opmask register specifier.
 	bool    vex_rr     = false;             // VEX R' field.
-	bool    vex_sae    = false;             // VEX Broadcast/RC/SAE context.
 	uint8_t vex_l      = 0;                 // VEX L field.
+	uint8_t vex_round  = rnd_off;           // Rounding mode.
+	
+	union
+	{
+		bool vex_sae = false;               // Suppress exceptions.
+		bool vex_rc;                        // Rounding control.
+		bool vex_broadcast;                 // Broadcast single element across the destination register.
+	};
+
 
 	uint8_t opcode1 = 0;                    // 1st opcode byte.
 	uint8_t opcode2 = 0;                    // 2nd opcode byte.

@@ -325,7 +325,8 @@ void ssde_x86::reset_fields()
 	vex_reg    = 0;
 	vex_opmask = 0;
 	vex_l      = 0;
-
+	vex_round  = rnd_off;
+	vex_sae    = false;
 
 	flags = ::error;
 }
@@ -423,7 +424,37 @@ void ssde_x86::decode_opcode()
 			vex_size = 4;
 
 
-			// TODO(notnanocat): implement
+			uint8_t vex_1 = buffer[ip + length++];
+			uint8_t vex_2 = buffer[ip + length++];
+			uint8_t vex_3 = buffer[ip + length++];
+
+			vex_decode_mm(vex_1 & 0x03);
+			
+
+			/* determine destination register from vvvv */
+			vex_reg = (~vex_2 >> 3) & 0x0f | (vex_3 & 0x80 ? 0x10 : 0);
+
+			vex_decode_pp(vex_2 & 0x03);
+
+			vex_zero = vex_3 & 0x80 ? true : false;
+			vex_l    = (vex_3 >> 5) & 0x03;
+
+			vex_sae  = vex_3 & 0x10 ? true : false;
+
+			vex_opmask = vex_3 & 0x07;
+			
+			if (vex_rc)
+				/* rounding control, implies vector is 512 bits wide */
+			{
+				vex_round = vex_l;
+				vex_l     = 0x02;
+			}
+			else if (vex_l == 0x03)
+				/* destination vector can't be wider than 512 bits */
+			{
+				error = true;
+				error_operand = true;
+			}
 		}
 		else
 			/* 2 or 3 byte VEX */
