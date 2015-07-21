@@ -90,6 +90,8 @@ public:
 	uint8_t vex_size   = 0;                 // Size of VEX prefix (usually 2 or 3 bytes).
 	uint8_t vex_reg    = 0;                 // VEX register specifier.
 	uint8_t vex_opmask = 0;                 // VEX opmask register specifier.
+	bool    vex_rr     = false;             // VEX R' field.
+	bool    vex_sae    = false;             // VEX Broadcast/RC/SAE context.
 	uint8_t vex_l      = 0;                 // VEX L field.
 
 	uint8_t opcode1 = 0;                    // 1st opcode byte.

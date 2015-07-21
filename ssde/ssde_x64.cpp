@@ -355,6 +355,8 @@ void ssde_x64::reset_fields()
 	vex_zero   = false;
 	vex_reg    = 0;
 	vex_opmask = 0;
+	vex_rr     = false;
+	vex_sae    = false;
 	vex_l      = 0;
 
 
@@ -491,8 +493,31 @@ void ssde_x64::decode_opcode()
 		{
 			vex_size = 4;
 
+			
+			uint8_t vex_1 = buffer[ip + length++];
+			uint8_t vex_2 = buffer[ip + length++];
+			uint8_t vex_3 = buffer[ip + length++];
 
-			// TODO(notnanocat): implement
+			vex_r  = vex_1 & 0x80 ? true : false;
+			vex_x  = vex_1 & 0x40 ? true : false;
+			vex_b  = vex_1 & 0x20 ? true : false;
+			vex_rr = vex_1 & 0x10 ? true : false;
+
+			vex_decode_mm(vex_1 & 0x03);
+
+
+			vex_w = vex_2 & 0x80 ? true : false;
+
+			/* determine destination register from vvvv */
+			vex_reg = (~vex_2 >> 3) & 0x0f | (vex_3 & 0x80 ? 0x10 : 0);
+
+			vex_decode_pp(vex_2 & 0x03);
+
+			vex_zero = vex_3 & 0x80 ? true : false;
+			vex_sae  = vex_3 & 0x10 ? true : false;
+			vex_l    = (vex_3 >> 5) & 0x03;
+
+			vex_opmask = vex_3 & 0x07;
 		}
 		else
 			/* 2 or 3 byte VEX */
