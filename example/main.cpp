@@ -47,7 +47,7 @@ int main(int argc, const char *argv[])
 		/* output address of the instruction */
 		cout << setfill('0') << setw(8) << hex << dis.ip << ": ";
 
-		for (unsigned int i = 0; i < dis.length; ++i)
+		for (int i = 0; i < dis.length; ++i)
 			/* output instruction's bytes */
 		{
 			cout << setfill('0') << setw(2) << hex << (static_cast<unsigned int>(bc[dis.ip + i]) & 0xff);
